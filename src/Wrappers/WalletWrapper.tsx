@@ -19,8 +19,9 @@ interface IWalletWrapperProps {
 }
 
 const WalletWrapper: FC<IWalletWrapperProps> = ({ children }) => {
-  const network = WalletAdapterNetwork.Devnet;
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const network = WalletAdapterNetwork.Mainnet;
+  const mainnet = `https://rpc.helius.xyz/?api-key=${process.env.NEXT_PUBLIC_HELIOUS_API_KEY}`
+
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter(),
@@ -33,7 +34,7 @@ const WalletWrapper: FC<IWalletWrapperProps> = ({ children }) => {
   );
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
+    <ConnectionProvider endpoint={mainnet}>
       <WalletProvider wallets={wallets}>
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>

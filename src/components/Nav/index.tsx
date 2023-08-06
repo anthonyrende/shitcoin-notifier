@@ -24,8 +24,10 @@ const Nav: FC = () => {
       py={4}
       top={0}
       w="100%"
+      bg={'gray.800'}
     >
-      <Text>Next solana Template</Text>
+      <Text>Shitcoin Notifier </Text>
+      <Text fontSize="sm">Notifications for when your shitcoin moons</Text>
       {connected ? <WalletMenu /> : <WalletMultiButton />}
     </Flex>
   );

@@ -7,10 +7,10 @@ import { theme } from '@/styles/theme';
 import { NextSeo } from 'next-seo';
 
 const metadata = {
-  title: 'Next Solana Starter',
-  description:
-    'An opinionated Next.js template for building Solana applications pre configured with Chakra UI, Next.js, Solana wallet adapter, ESlint, Prettier, and more.',
-  url: 'https://next-solana-starter.vercel.app/',
+  title: 'Shitcoin notifier',
+  description: 'Get notified when your shitcoin moons.',
+  // TODO: add url
+  url: '',
 };
 
 const App = ({ Component, pageProps }: AppProps) => {

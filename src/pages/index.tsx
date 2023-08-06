@@ -1,15 +1,30 @@
-
-import { useEffect, useState, useCallback } from 'react';  
+import { useEffect, useState, useCallback } from 'react';
 import MainLayout from '@/Layout/Main.layout';
-import { Button, Heading, Text, Icon, Link } from '@chakra-ui/react';
+import {
+  Button,
+  Heading,
+  Text,
+  Icon,
+  Link,
+  Stack,
+  useDisclosure,
+} from '@chakra-ui/react';
 import CoinStats from '@/components/CoinStats';
 import { FiGithub } from 'react-icons/fi';
-import { useAnchorWallet, useConnection, useWallet } from '@solana/wallet-adapter-react';
+
+import {
+  useAnchorWallet,
+  useConnection,
+  useWallet,
+} from '@solana/wallet-adapter-react';
 import { LAMPORTS_PER_SOL } from '@solana/web3.js';
-import { useFetchCoinsFromWallet } from '@/hooks/useFetchCoinFromWallet';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import { get } from 'http';
+
+import { useFetchCoinsFromWallet } from '@/hooks/useFetchCoinFromWallet';
 import useFetchCoinPrice from '@/hooks/useFetchCoinPrice';
+
+import coinDummyData from '../../coinDummyData.json';
+import AddYourCoin from '@/components/AddYourCoin';
 
 type Token = {
   tokenAccount: string;
@@ -22,11 +37,14 @@ const Home = () => {
   const [balance, setBalance] = useState<number>();
   const [coins, setCoins] = useState<Token[]>([]);
 
-  const { coinPrice, loading, error, fetchCoinPrice, setCoin } = useFetchCoinPrice();
-  
+  const { isOpen, onOpen, onClose } = useDisclosure();
+
+  const { coinPrice, loading, error, fetchCoinPrice, setCoin } =
+    useFetchCoinPrice();
+
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
-  const {publicKey} = useWallet();
+  const { publicKey } = useWallet();
 
   useEffect(() => {
     (async () => {
@@ -38,12 +56,11 @@ const Home = () => {
     })();
   }, [wallet, connection]);
 
-  
   // const coins = useFetchCoinsFromWallet(publicKey, connection, TOKEN_PROGRAM_ID);
-  
+
   // console.log(coins);
 
-  const url = `https://api.helius.xyz/v0/addresses/${publicKey}/balances?api-key=${process.env.NEXT_PUBLIC_HELIOUS_API_KEY}}`;
+  const url = `https://api.helius.xyz/v0/addresses/${publicKey}/balances?api-key=${process.env.NEXT_PUBLIC_HELIOUS_API_KEY}`;
 
   const getBalances = async () => {
     if (!publicKey) {
@@ -56,61 +73,66 @@ const Home = () => {
 
   const sleep = (ms: number) => {
     return new Promise(resolve => setTimeout(resolve, ms));
-  }
+  };
 
   const getCoinsFromWallet = useCallback(async () => {
     if (!publicKey) {
       return;
     }
-    getBalances().then(async (data) => {
-      const tokenAccount = data.tokens.map(async(token, index) => {
-        if (token.amount > 2) {
-          // Throttle requests by waiting 200ms before each one
-          await sleep(100 * index);
-          const response = await fetch(`https://public-api.birdeye.so/public/exists_token?address=${token.mint}`);
-          const resData = await response.json();
-          if (resData.data.exists) {
-            // First check if the token is already in the array
-            const tokenIndex = coins.findIndex((coin) => coin.mint === token.mint);
-            if (tokenIndex === -1) {
-              // If not, add it to the array
-              setCoins((prevCoins) => {
-                return [...prevCoins, token];
-              });
+    getBalances()
+      .then(async data => {
+        const tokenAccount = data.tokens.map(async (token, index) => {
+          if (token.amount > 2) {
+            // Throttle requests by waiting 200ms before each one
+            await sleep(100 * index);
+            const response = await fetch(
+              `https://public-api.birdeye.so/public/exists_token?address=${token.mint}`,
+            );
+            const resData = await response.json();
+            if (resData.data.exists) {
+              // First check if the token is already in the array
+              const tokenIndex = coins.findIndex(
+                coin => coin.mint === token.mint,
+              );
+              if (tokenIndex === -1) {
+                // If not, add it to the array
+                setCoins(prevCoins => {
+                  return [...prevCoins, token];
+                });
+              }
             }
           }
-        }
+        });
+      })
+      .catch(err => {
+        console.log('error: ', err);
       });
-    }).catch((err) => {
-      console.log("error: ", err);
-    });
   }, [publicKey]);
 
   useEffect(() => {
-    // Uncomment to check if token exists on mount
-    // getCoinsFromWallet1();
-    fetchCoinPrice();
+    // Uncomment to check get coins from wallet otherise use coinDummyData.json for testing
+    // getCoinsFromWallet();
+    setCoins(coinDummyData);
+    // fetchCoinPrice();
   }, [getCoinsFromWallet]);
 
-console.log("coins: ", coins)
+  console.log('coins: ', coins);
 
   return (
     <MainLayout>
       <Heading size="4xl">
-        Create your Next Solana Project <br />
-        in seconds.
+        Create notifications for your shitcoins, <br />
+        you degenerate
       </Heading>
       <Text fontSize="lg" maxW="2xl" mt={4}>
-        An opinionated Next.js template for building Solana applications pre
-        configured with Chakra UI, Next.js, Solana wallet adapter, ESlint,
-        Prettier, and more.
+        If a coin in your wallet is listed on BirdEye, you can create a
+        notification for it. You will be notified when the price of the coin
+        changes by more than 5% in the last 24 hours.
+        <br />
+        <br />
+        {/* <b>Disclaimer:</b> This is a work in progress. Use at your own risk. */}
       </Text>
-      <p>{balance}</p>
-      <Link
-        _hover={{ textDecor: 'none' }}
-        href="https://github.com/avneesh0612/next-solana-starter"
-        isExternal
-      >
+      <Link _hover={{ textDecor: 'none' }}>
         <Button
           _active={{
             bg: 'blackAlpha.800',
@@ -123,12 +145,16 @@ console.log("coins: ", coins)
           rounded="full"
           shadow="lg"
           size="lg"
+          onClick={onOpen}
         >
           <Icon as={FiGithub} mr={2} />
-          Star on GitHub
+          Add your own coin
         </Button>
+        <AddYourCoin isOpen={isOpen} onOpen={onOpen} onClose={onClose} />
       </Link>
-      <CoinStats />
+      <>
+        <CoinStats coins={coins} />
+      </>
     </MainLayout>
   );
 };

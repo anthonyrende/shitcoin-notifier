@@ -16,6 +16,7 @@ import { FiServer } from 'react-icons/fi';
 import { GoLocation } from 'react-icons/go';
 
 import useFetchCoinDetails from '@/hooks/useFetchCoinDetails';
+import useFetchCoinPrice from '@/hooks/useFetchCoinPrice';
 
 interface StatsCardProps {
   title: string;
@@ -55,9 +56,12 @@ function StatsCard(props: StatsCardProps) {
   );
 }
 
-export default function CoinStats(coins) {
-  const { coinsWithPrices, loading, error } = useFetchCoinDetails(coins);
-  console.log('coins withPrices: ', coinsWithPrices);
+export default function CoinStats({ coins, pubkey }) {
+  const { coinMetaData, loading, error } = useFetchCoinDetails({
+    coins,
+    pubkey,
+  });
+  console.log('coins withMetaData: ', coinMetaData);
   return (
     <Box maxW="7xl" mx={'auto'} pt={5} px={{ base: 2, sm: 12, md: 17 }}>
       <chakra.h1
@@ -66,33 +70,46 @@ export default function CoinStats(coins) {
         py={10}
         fontWeight={'bold'}
       >
-        Coin Stats ({coins.coins.length})
+        Coin Stats ({coins?.coins?.length})
       </chakra.h1>
-      {coinsWithPrices.map((coin, index) => {
-        return (
-          <SimpleGrid
-            columns={{ base: 1, md: 3 }}
-            spacing={{ base: 5, lg: 8 }}
-            key={`${coins.coins.length}_${index}`}
-          >
-            <StatsCard
-              title={'Name'}
-              stat={coin.name}
-              icon={<Img src={coin.logoURI} boxSize={'3em'} />}
-            />
-            <StatsCard
-              title={'24h Price Change'}
-              stat={coin.v24hChangePercent.toFixed(2) + '%'}
-              icon={<FiServer size={'3em'} />}
-            />
-            <StatsCard
-              title={'Create Notification'}
-              stat={<Button colorScheme="purple">Create</Button>}
-              icon={<GoLocation size={'3em'} />}
-            />
-          </SimpleGrid>
-        );
-      })}
+      {coinMetaData.length > 0 &&
+        coinMetaData?.map((coin, index) => {
+          return (
+            <SimpleGrid
+              columns={{ base: 1, md: 3 }}
+              spacing={{ base: 5, lg: 8 }}
+              key={`${coins}_${index}`}
+            >
+              <StatsCard
+                title={'Name'}
+                stat={
+                  coin.metadata.legacyMetadata?.name ||
+                  coin.metadata.onChainMetadata.metadata.data.name
+                }
+                icon={
+                  <Img
+                    src={
+                      coin.metadata.legacyMetadata?.logoURI ||
+                      coin.metadata.onChainMetadata.metadata.data.uri ||
+                      'https://upload.wikimedia.org/wikipedia/commons/a/ac/No_image_available.svg'
+                    }
+                    boxSize={'3em'}
+                  />
+                }
+              />
+              {/* <StatsCard
+                title={'24h Price Change'}
+                stat={coin.v24hChangePercent.toFixed(2) + '%'}
+                icon={<FiServer size={'3em'} />}
+              /> */}
+              <StatsCard
+                title={'Create Notification'}
+                stat={<Button colorScheme="purple">Create</Button>}
+                icon={<GoLocation size={'3em'} />}
+              />
+            </SimpleGrid>
+          );
+        })}
     </Box>
   );
 }

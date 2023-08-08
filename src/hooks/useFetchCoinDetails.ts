@@ -1,53 +1,51 @@
 import { useEffect, useState, useCallback } from 'react';
+import { fetchTokenMetadata } from '@/utils/fetchTokenMetaData';
 
-const useFetchCoinsPrices = ({ coins }) => {
-  const [coinsWithPrices, setCoinsWithPrices] = useState([]);
+const useFetchCoinDetails = ({ coins, connection, pubkey }) => {
+  const [coinMetaData, setCoinMetaData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const sleep = ms => {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  };
-  if (!coins) {
-    return;
-  }
-  const fetchCoinsPrices = useCallback(async () => {
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  const fetchCoinMetadata = useCallback(async () => {
+    // console.log('here');
+    if (!coins || coins.length === 0) {
+      console.log('Coins array is empty or undefined');
+      return;
+    }
+    // console.log('hrere2');
     setLoading(true);
     setError(null);
-    try {
-      const coinsData = [];
-      for (let i = 0; i < coins.length; i++) {
-        const coin = coins[i];
-        await sleep(50 * i);
-        const response = await fetch(
-          //   `https://price.jup.ag/v4/price?ids=${coin.mint}`,
-          'https://public-api.birdeye.so/public/tokenlist?sort_by=v24hUSD&sort_type=desc&offset=0',
-        );
-        const data = await response.json();
-        // console.log('data', data);
-        // coinsData.push({ ...coin, price: data[coin.mint].usd });
-        // match mint address with tokens.addressi
-        data.data.tokens.forEach((token, index) => {
-          if (token.address === coin.mint) {
-            coinsData.push({ ...token });
-          }
-        });
-      }
-      setCoinsWithPrices(coinsData);
-    } catch (error) {
-      setError('Failed to fetch coins prices');
-    } finally {
-      setLoading(false);
-    }
-  }, [coins, setCoinsWithPrices]);
-  //   console.log('coins with prices', coinsWithPrices);
-  useEffect(() => {
-    if (coins && coins.length > 0) {
-      fetchCoinsPrices();
-    }
-  }, [fetchCoinsPrices]);
 
-  return { coinsWithPrices, loading, error };
+    const coinsData = [];
+    for (let i = 0; i < coins.length; i++) {
+      await sleep(200 * i);
+      const coin = coins[i];
+      const mintAddress = coin.mint;
+      const metadata = await fetchTokenMetadata({
+        mintAddress,
+      });
+      console.log('Fetched metadata', metadata);
+      coinsData.push({ ...coin, metadata });
+      //   } catch (error) {
+      // console.error(`Failed to fetch metadata for coin ${coin.mint}`, error);
+      //   }
+    }
+    setCoinMetaData(coinsData);
+    setLoading(false);
+  }, [coins, connection]);
+
+  useEffect(() => {
+    console.log('useEffect started with coins:', coins);
+    if (coins && coins.length > 0) {
+      fetchCoinMetadata();
+    } else {
+      console.log('useEffect skipped fetchCoinMetadata due to no coins');
+    }
+  }, [fetchCoinMetadata, coins]); // re-run whenever `coins` changes
+
+  return { coinMetaData, loading, error };
 };
 
-export default useFetchCoinsPrices;
+export default useFetchCoinDetails;

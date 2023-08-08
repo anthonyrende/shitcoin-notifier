@@ -1,20 +1,32 @@
 [
-    {
-        "tokenAccount": "AnS4eCDiRjcCHQAmojB4H4v7LTiB71AvNgXQhps6Zi2i",
-        "mint": "cqNTpypmbwghrf1G9VGvSENcw7M7wGSQ7JS8UTQWXwb",
-        "amount": 10000000,
-        "decimals": 8
-    },
-    {
-        "tokenAccount": "7pyhbbmZAo7TqJLoeezvj9tjb4LRN3rnYsJh8UkYFuKs",
-        "mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-        "amount": 29086456875,
-        "decimals": 5
-    },
-    {
-        "tokenAccount": "7psz14ZkeEBsuXwHa3PW3byPpPjfJJvq7vX6JMRWcEjx",
-        "mint": "H7Qc9APCWWGDVxGD5fJHmLTmdEgT9GFatAKFNg6sHh8A",
-        "amount": 2500000000000,
-        "decimals": 9
-    }
+  {
+    "tokenAccount": "AnS4eCDiRjcCHQAmojB4H4v7LTiB71AvNgXQhps6Zi2i",
+    "mint": "cqNTpypmbwghrf1G9VGvSENcw7M7wGSQ7JS8UTQWXwb",
+    "amount": 10000000,
+    "decimals": 8
+  },
+  {
+    "tokenAccount": "7pyhbbmZAo7TqJLoeezvj9tjb4LRN3rnYsJh8UkYFuKs",
+    "mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+    "amount": 29086456875,
+    "decimals": 5
+  },
+  {
+    "tokenAccount": "7psz14ZkeEBsuXwHa3PW3byPpPjfJJvq7vX6JMRWcEjx",
+    "mint": "H7Qc9APCWWGDVxGD5fJHmLTmdEgT9GFatAKFNg6sHh8A",
+    "amount": 2500000000000,
+    "decimals": 9
+  },
+  {
+    "tokenAccount": "AnS4eCDiRjcCHQAmojB4H4v7LTiB71AvNgXQhps6Zi2i",
+    "mint": "cqNTpypmbwghrf1G9VGvSENcw7M7wGSQ7JS8UTQWXwb",
+    "amount": 10000000,
+    "decimals": 8
+  },
+  {
+    "tokenAccount": "7pyhbbmZAo7TqJLoeezvj9tjb4LRN3rnYsJh8UkYFuKs",
+    "mint": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+    "amount": 29086456875,
+    "decimals": 5
+  }
 ]

@@ -13,12 +13,14 @@ const useFetchCoinPrice = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`https://public-api.birdeye.so/public/price?address=${coin}`);
+      const response = await fetch(
+        `https://public-api.birdeye.so/public/price?address=${coin}`,
+      );
       const data = await response.json();
       if (data.success) {
         setCoinPrice(data.data);
       } else {
-        setError('Failed to fetch coin price');
+        setError('Failed to fetch coin price - Coin not found');
       }
     } catch (error) {
       setError('Failed to fetch coin price');
@@ -35,4 +37,3 @@ const useFetchCoinPrice = () => {
 };
 
 export default useFetchCoinPrice;
-

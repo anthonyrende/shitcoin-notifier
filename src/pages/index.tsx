@@ -56,16 +56,11 @@ const Home = () => {
     })();
   }, [wallet, connection]);
 
-  // const coins = useFetchCoinsFromWallet(publicKey, connection, TOKEN_PROGRAM_ID);
-
-  // console.log(coins);
-
-  const url = `https://api.helius.xyz/v0/addresses/${publicKey}/balances?api-key=${process.env.NEXT_PUBLIC_HELIOUS_API_KEY}`;
-
   const getBalances = async () => {
     if (!publicKey) {
       return;
     }
+    const url = `https://api.helius.xyz/v0/addresses/${publicKey}/balances?api-key=${process.env.NEXT_PUBLIC_HELIOUS_API_KEY}`;
     const response = await fetch(url);
     const data = await response.json();
     return data;
@@ -84,12 +79,13 @@ const Home = () => {
         const tokenAccount = data.tokens.map(async (token, index) => {
           if (token.amount > 2) {
             // Throttle requests by waiting 200ms before each one
-            await sleep(100 * index);
+            await sleep(200 * index);
             const response = await fetch(
               `https://public-api.birdeye.so/public/exists_token?address=${token.mint}`,
             );
             const resData = await response.json();
-            if (resData.data.exists) {
+
+            if (resData?.data?.exists) {
               // First check if the token is already in the array
               const tokenIndex = coins.findIndex(
                 coin => coin.mint === token.mint,
@@ -111,12 +107,10 @@ const Home = () => {
 
   useEffect(() => {
     // Uncomment to check get coins from wallet otherise use coinDummyData.json for testing
-    // getCoinsFromWallet();
-    setCoins(coinDummyData);
+    getCoinsFromWallet();
+    // setCoins(coinDummyData);
     // fetchCoinPrice();
   }, [getCoinsFromWallet]);
-
-  console.log('coins: ', coins);
 
   return (
     <MainLayout>
@@ -153,7 +147,7 @@ const Home = () => {
         <AddYourCoin isOpen={isOpen} onOpen={onOpen} onClose={onClose} />
       </Link>
       <>
-        <CoinStats coins={coins} />
+        <CoinStats coins={coins} pubkey={publicKey} />
       </>
     </MainLayout>
   );

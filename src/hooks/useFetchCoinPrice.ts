@@ -27,17 +27,15 @@ const useFetchCoinPrice = ({ coins } = {}) => {
         headers: {
           accept: 'application/json',
           'content-type': 'application/json',
-          authorization: 'Bearer 033be659-f866-4f50-baae-dd00655d5e76',
+          authorization: process.env.NEXT_PUBLIC_HELLO_MOON_API_KEY,
         },
         body: JSON.stringify({ mints: [coin.mint] }),
       };
 
       try {
         const response = await fetch(url, options);
-        console.log('response', response);
         const data = await response.json();
-        console.log('data', data.data[0]);
-        coinsPriceData.push({ ...coin, priceData: data.data[0] }); // adjust accordingly based on response structure
+        coinsPriceData.push({ ...coin, priceData: data.data[0] });
       } catch (err) {
         console.error('Error fetching coin price for:', coin, err);
         // You can decide whether to continue the loop or stop here

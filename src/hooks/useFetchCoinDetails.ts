@@ -26,18 +26,13 @@ const useFetchCoinDetails = ({ coins, connection, pubkey }) => {
       const metadata = await fetchTokenMetadata({
         mintAddress,
       });
-      console.log('Fetched metadata', metadata);
       coinsData.push({ ...coin, metadata });
-      //   } catch (error) {
-      // console.error(`Failed to fetch metadata for coin ${coin.mint}`, error);
-      //   }
     }
     setCoinMetaData(coinsData);
     setLoading(false);
   }, [coins, connection]);
 
   useEffect(() => {
-    console.log('useEffect started with coins:', coins);
     if (coins && coins.length > 0) {
       fetchCoinMetadata();
     } else {

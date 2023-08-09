@@ -34,7 +34,6 @@ export async function fetchTokenMetadata({ mintAddress }) {
     });
 
     const data = await response.json();
-    console.log('metadata: ', data);
     return data[0];
   } catch (error) {
     console.error(

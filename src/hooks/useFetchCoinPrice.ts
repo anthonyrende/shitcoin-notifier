@@ -1,39 +1,62 @@
 import { useEffect, useState, useCallback } from 'react';
 
-const useFetchCoinPrice = () => {
-  const [coin, setCoin] = useState(null);
-  const [coinPrice, setCoinPrice] = useState(null);
+const useFetchCoinPrice = ({ coins } = {}) => {
+  const [coinPrices, setCoinPrices] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<null | string>(null);
+  const [error, setError] = useState(null);
+
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
   const fetchCoinPrice = useCallback(async () => {
-    if (!coin) {
+    if (!coins || coins.length === 0) {
+      console.log('Coins array is empty or undefined');
       return;
     }
+
     setLoading(true);
     setError(null);
-    try {
-      const response = await fetch(
-        `https://public-api.birdeye.so/public/price?address=${coin}`,
-      );
-      const data = await response.json();
-      if (data.success) {
-        setCoinPrice(data.data);
-      } else {
-        setError('Failed to fetch coin price - Coin not found');
+
+    const coinsPriceData = [];
+    for (let i = 0; i < coins.length; i++) {
+      await sleep(200 * i);
+      const coin = coins[i];
+
+      const url = 'https://rest-api.hellomoon.io/v0/token/price/batched';
+      const options = {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json',
+          authorization: 'Bearer 033be659-f866-4f50-baae-dd00655d5e76',
+        },
+        body: JSON.stringify({ mints: [coin.mint] }),
+      };
+
+      try {
+        const response = await fetch(url, options);
+        console.log('response', response);
+        const data = await response.json();
+        console.log('data', data.data[0]);
+        coinsPriceData.push({ ...coin, priceData: data.data[0] }); // adjust accordingly based on response structure
+      } catch (err) {
+        console.error('Error fetching coin price for:', coin, err);
+        // You can decide whether to continue the loop or stop here
       }
-    } catch (error) {
-      setError('Failed to fetch coin price');
-    } finally {
-      setLoading(false);
     }
-  }, [coin]);
+
+    setCoinPrices(coinsPriceData);
+    setLoading(false);
+  }, [coins]);
 
   useEffect(() => {
-    fetchCoinPrice();
-  }, [fetchCoinPrice]);
+    console.log('Initializing useFetchCoinPrice with coins:', coins);
 
-  return { coinPrice, loading, error, fetchCoinPrice, setCoin };
+    if (coins && coins.length > 0) {
+      fetchCoinPrice();
+    }
+  }, [fetchCoinPrice, coins]);
+
+  return { coinPrices, loading, error };
 };
 
 export default useFetchCoinPrice;

@@ -16,7 +16,7 @@ const MainLayout: FC<IMainLayoutProps> = ({ children }) => {
       color="white"
       display="flex"
       flexDir="column"
-      h="100vh"
+      // h="100vh"
       overflow="hidden"
       py="44"
       textAlign="center"

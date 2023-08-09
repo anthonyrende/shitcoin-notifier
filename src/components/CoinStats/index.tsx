@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 
+import { Route } from 'next';
+import { useRouter } from 'next/router';
+
 import {
   Box,
   Button,
@@ -20,7 +23,9 @@ import { GoLocation } from 'react-icons/go';
 
 import useFetchCoinDetails from '@/hooks/useFetchCoinDetails';
 import useFetchCoinPrice from '@/hooks/useFetchCoinPrice';
-import { getTokenImage } from '@/utils/getTokenImage';
+
+import { fetchTokenStats } from '@/utils/fetchTokenStats';
+import { formatAsPercentage } from '@/utils/formatAsPercentage';
 
 interface StatsCardProps {
   title: string;
@@ -29,6 +34,7 @@ interface StatsCardProps {
 }
 
 function PriceDisplay({ price, decimals }) {
+  const router = useRouter();
   if (!price || !Number.isFinite(price) || !Number.isFinite(decimals)) {
     return 'N/A';
   }
@@ -39,14 +45,12 @@ function PriceDisplay({ price, decimals }) {
     // Remove the "0." prefix
     priceString = priceString.substring(2);
   }
-  console.log('priceString: ', priceString);
-
   const zeros = '0'.repeat(decimals);
   // Calculate the full price with padding zeroes based on the number of decimals
   const fullPrice = `0.${zeros}${priceString}`;
-  console.log('fullPrice: ', fullPrice);
+
   const shortPrice = `0.0...${fullPrice.slice(-6)}`;
-  console.log('shortPrice: ', shortPrice);
+
   return (
     <Tooltip hasArrow label={`$${fullPrice}`} bg="purple.600">
       <span>{shortPrice}</span>
@@ -90,6 +94,9 @@ export default function CoinStats({ coins, pubkey }) {
   if (!coins) {
     return;
   }
+  const router = useRouter();
+  const [tokenStats, setTokenStats] = useState([]);
+
   const { coinMetaData, loading, error } = useFetchCoinDetails({
     coins,
     pubkey,
@@ -101,7 +108,25 @@ export default function CoinStats({ coins, pubkey }) {
     error: priceError,
   } = useFetchCoinPrice({ coins });
 
+  useEffect(() => {
+    if (coins && coins.length > 0) {
+      const fetchAllStats = async () => {
+        try {
+          const statsPromises = coins.map(coin => fetchTokenStats(coin.mint));
+          const allStats = await Promise.all(statsPromises);
+          console.log('All token stats: ', allStats);
+          setTokenStats(allStats);
+        } catch (error) {
+          console.error('Error fetching token stats for all coins:', error);
+        }
+      };
+
+      fetchAllStats();
+    }
+  }, [coins]);
+
   console.log('coinsPriceeeeeeee: ', coinPrices);
+  console.log('tokenStats: ', tokenStats);
 
   return (
     <Box maxW="7xl" mx={'auto'} pt={5} px={{ base: 2, sm: 12, md: 17 }}>
@@ -111,7 +136,7 @@ export default function CoinStats({ coins, pubkey }) {
         py={10}
         fontWeight={'bold'}
       >
-        Coin Stats ({coins?.length})
+        Your Coin Stats ({coins?.length})
       </chakra.h1>
       {coinMetaData.length > 0 &&
         coinMetaData?.map((coin, index) => {
@@ -120,6 +145,9 @@ export default function CoinStats({ coins, pubkey }) {
               columns={{ base: 1, md: 3 }}
               spacing={{ base: 5, lg: 8 }}
               key={`${coins}_${index}`}
+              // onClick={() => {
+              //   router.push(`/coin/${coin.mint}`);
+              // }}
             >
               <StatsCard
                 title={'Name'}
@@ -146,6 +174,15 @@ export default function CoinStats({ coins, pubkey }) {
                   />
                 }
                 icon={<FiServer size={'3em'} />}
+              />
+              <StatsCard
+                title={'30 Min Price Change'}
+                stat={
+                  tokenStats[index] && tokenStats[index][5]
+                    ? formatAsPercentage(tokenStats[index][5]?.priceChange)
+                    : 'N/A'
+                }
+                icon={<BsPerson size={'3em'} />}
               />
               <StatsCard
                 title={'Create Notification'}

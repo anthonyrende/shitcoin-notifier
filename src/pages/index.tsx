@@ -25,6 +25,7 @@ import useFetchCoinPrice from '@/hooks/useFetchCoinPrice';
 
 import coinDummyData from '../../coinDummyData.json';
 import AddYourCoin from '@/components/AddYourCoin';
+import { useCoinStore } from '@/stores/useCoinStore';
 
 type Token = {
   tokenAccount: string;
@@ -35,82 +36,28 @@ type Token = {
 
 const Home = () => {
   const [balance, setBalance] = useState<number>();
-  const [coins, setCoins] = useState<Token[]>([]);
+
+  const addCoin = useCoinStore(state => state.addToCoins);
 
   const { isOpen, onOpen, onClose } = useDisclosure();
-
-  const { coinPrice, loading, error, fetchCoinPrice, setCoin } =
-    useFetchCoinPrice();
 
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
   const { publicKey } = useWallet();
 
+  const coinsFromWallet = useFetchCoinsFromWallet(
+    publicKey,
+    connection,
+    TOKEN_PROGRAM_ID,
+  );
+
   useEffect(() => {
-    (async () => {
-      if (wallet) {
-        const balance = await connection.getBalance(wallet.publicKey);
-        console.log(balance, wallet.publicKey.toBase58());
-        setBalance(balance / LAMPORTS_PER_SOL);
-      }
-    })();
-  }, [wallet, connection]);
-
-  const getBalances = async () => {
-    if (!publicKey) {
-      return;
-    }
-    const url = `https://api.helius.xyz/v0/addresses/${publicKey}/balances?api-key=${process.env.NEXT_PUBLIC_HELIOUS_API_KEY}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    return data;
-  };
-
-  const sleep = (ms: number) => {
-    return new Promise(resolve => setTimeout(resolve, ms));
-  };
-
-  const getCoinsFromWallet = useCallback(async () => {
-    if (!publicKey) {
-      return;
-    }
-    getBalances()
-      .then(async data => {
-        const tokenAccount = data.tokens.map(async (token, index) => {
-          if (token.amount > 2) {
-            // Throttle requests by waiting 200ms before each one
-            await sleep(200 * index);
-            const response = await fetch(
-              `https://public-api.birdeye.so/public/exists_token?address=${token.mint}`,
-            );
-            const resData = await response.json();
-
-            if (resData?.data?.exists) {
-              // First check if the token is already in the array
-              const tokenIndex = coins.findIndex(
-                coin => coin.mint === token.mint,
-              );
-              if (tokenIndex === -1) {
-                // If not, add it to the array
-                setCoins(prevCoins => {
-                  return [...prevCoins, token];
-                });
-              }
-            }
-          }
-        });
-      })
-      .catch(err => {
-        console.log('error: ', err);
+    if (coinsFromWallet && coinsFromWallet.length > 0) {
+      coinsFromWallet.forEach(coin => {
+        addCoin(coin);
       });
-  }, [publicKey]);
-
-  useEffect(() => {
-    // Uncomment to check get coins from wallet otherise use coinDummyData.json for testing
-    getCoinsFromWallet();
-    // setCoins(coinDummyData);
-    // fetchCoinPrice();
-  }, [getCoinsFromWallet]);
+    }
+  }, [coinsFromWallet]);
 
   return (
     <MainLayout>
@@ -147,7 +94,7 @@ const Home = () => {
         <AddYourCoin isOpen={isOpen} onOpen={onOpen} onClose={onClose} />
       </Link>
       <>
-        <CoinStats coins={coins} pubkey={publicKey} />
+        <CoinStats />
       </>
     </MainLayout>
   );

@@ -35,7 +35,7 @@ export function useFetchCoinsFromWallet(
         coinsData.push({
           accountNumber: i + 1,
           accountPublicKey: account.pubkey.toString(),
-          mintAddress: mintAddress,
+          mint: mintAddress,
           tokenBalance: tokenBalance,
         });
       }

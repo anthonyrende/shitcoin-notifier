@@ -35,29 +35,40 @@ type Token = {
 };
 
 const Home = () => {
-  const [balance, setBalance] = useState<number>();
-
-  const addCoin = useCoinStore(state => state.addToCoins);
-
+  const { coins, addToCoins, clearState } = useCoinStore([
+    'coins',
+    'addToCoins',
+    'clearState',
+  ]);
   const { isOpen, onOpen, onClose } = useDisclosure();
-
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
-  const { publicKey } = useWallet();
-
+  const { publicKey, disconnect } = useWallet();
   const coinsFromWallet = useFetchCoinsFromWallet(
     publicKey,
     connection,
     TOKEN_PROGRAM_ID,
   );
-
+  console.log('publicKey', publicKey);
   useEffect(() => {
     if (coinsFromWallet && coinsFromWallet.length > 0) {
+      console.log('coinsFromWallet here');
       coinsFromWallet.forEach(coin => {
-        addCoin(coin);
+        // Only add the coin if it's not already in the global state
+        if (!coins.some(c => c.mint === coin.mint)) {
+          addToCoins(coin);
+        }
       });
     }
-  }, [coinsFromWallet]);
+  }, [coinsFromWallet, coins, addToCoins, publicKey, connection]);
+
+  console.log('coinsFromWallet', coinsFromWallet);
+
+  useEffect(() => {
+    if (disconnect) {
+      clearState();
+    }
+  }, [disconnect, clearState]);
 
   return (
     <MainLayout>

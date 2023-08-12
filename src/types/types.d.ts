@@ -3,7 +3,7 @@ export interface Coin {
   accountPublicKey: string;
   amount: number;
   decimals: number;
-  mintAddress: string;
+  mint: string;
   priceData: {
     mints: string;
     price: number;

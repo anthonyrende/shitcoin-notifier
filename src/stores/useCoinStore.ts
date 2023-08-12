@@ -1,6 +1,10 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 import { Coin } from '../types';
+import { extractMetadata } from '@/utils/metaDataHelper';
+
+import _ from 'lodash';
 
 // Define the interface of the Cart state
 interface State {
@@ -21,41 +25,48 @@ const INITIAL_STATE: State = {
 };
 
 // Create the store with Zustand, combining the status interface and actions
-export const useCoinStore = create<State & Actions>((set, get) => ({
-  coins: INITIAL_STATE.coins,
+export const useCoinStore = create(
+  persist<State & Actions>(
+    (set, get) => ({
+      coins: INITIAL_STATE.coins,
 
-  addToCoins: (newCoin: Coin) => {
-    const coins = get().coins;
-    const coinItem = coins.find(item => item.mint === newCoin.mint);
+      addToCoins: (newCoin: Coin) => {
+        const coins = get().coins;
+        const coinExists = coins.some(coin => coin.mint === newCoin.mint);
 
-    // If the item already exists in the Cart, you can either skip or update its properties.
-    if (coinItem) {
-      console.log('Coin already exists');
-    } else {
-      const updatedCoins = [...coins, newCoin];
-      set(state => ({
-        coins: updatedCoins,
-      }));
-    }
-  },
-  removeFromCoins: (coin: Coin) => {
-    set(state => ({
-      coins: state.coins.filter(item => item.mint !== coin.mint),
-    }));
-  },
-  updateCoinMetaData: (mint: string, metaData: any) => {
-    const coins = get().coins;
-    const updatedCoins = coins.map(coin =>
-      coin.mint === mint ? { ...coin, metaData } : coin,
-    );
-    set({ coins: updatedCoins });
-  },
+        if (!coinExists) {
+          const updatedCoins = [...coins, newCoin].filter(coin => coin.mint);
+          set({ coins: updatedCoins });
+        }
+      },
 
-  updateCoinPrices: (mint: string, priceData: any) => {
-    const coins = get().coins;
-    const updatedCoins = coins.map(coin =>
-      coin.mint === mint ? { ...coin, priceData } : coin,
-    );
-    set({ coins: updatedCoins });
-  },
-}));
+      removeFromCoins: (coin: Coin) => {
+        set(state => ({
+          coins: state.coins.filter(item => item.mint !== coin.mint),
+        }));
+      },
+
+      updateCoinMetaData: (coin: Coin) => {
+        const coins = get().coins;
+        const metaData = extractMetadata(coin);
+        const updatedCoins = coins.map(c =>
+          c && c.mint && coin && coin.mint && c.mint === coin.mint
+            ? { ...c, metaData }
+            : c,
+        );
+        set({ coins: updatedCoins });
+      },
+      updateCoinPrices: (mint: string, priceData: any) => {
+        const coins = get().coins;
+        const updatedCoins = coins.map(coin =>
+          coin.mint === mint ? { ...coin, priceData } : coin,
+        );
+        set({ coins: updatedCoins });
+      },
+    }),
+    {
+      name: 'coin-storage',
+      // getStorage: () => sessionStorage, (optional) by default the 'localStorage' is used
+    },
+  ),
+);

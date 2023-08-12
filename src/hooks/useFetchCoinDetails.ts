@@ -1,46 +1,52 @@
 import { useEffect, useState, useCallback } from 'react';
 import { fetchTokenMetadata } from '@/utils/fetchTokenMetaData';
+import { Coin } from '@/types/types';
 
-const useFetchCoinDetails = ({ coins, connection, pubkey }) => {
+import { isEqual } from 'lodash';
+
+export const useFetchCoinDetails = ({ coins }: Coin[]) => {
   const [coinMetaData, setCoinMetaData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-  const fetchCoinMetadata = useCallback(async () => {
-    // console.log('here');
+  useEffect(() => {
     if (!coins || coins.length === 0) {
       console.log('Coins array is empty or undefined');
       return;
     }
-    // console.log('hrere2');
-    setLoading(true);
-    setError(null);
 
-    const coinsData = [];
-    for (let i = 0; i < coins.length; i++) {
-      await sleep(200 * i);
-      const coin = coins[i];
-      const mintAddress = coin.mint;
-      const metadata = await fetchTokenMetadata({
-        mintAddress,
-      });
-      coinsData.push({ ...coin, metadata });
-    }
-    setCoinMetaData(coinsData);
-    setLoading(false);
-  }, [coins, connection]);
+    let isCancelled = false;
 
-  useEffect(() => {
-    if (coins && coins.length > 0) {
-      fetchCoinMetadata();
-    } else {
-      console.log('useEffect skipped fetchCoinMetadata due to no coins');
-    }
-  }, [fetchCoinMetadata, coins]); // re-run whenever `coins` changes
+    const fetchCoinMetadata = async () => {
+      setLoading(true);
+      setError(null);
+
+      const coinsData = [];
+      for (let i = 0; i < coins.length; i++) {
+        if (isCancelled) return;
+        await sleep(200 * i);
+        const coin = coins[i];
+        const mintAddress = coin.mint;
+        const metadata = await fetchTokenMetadata({
+          mintAddress,
+        });
+        coinsData.push({ ...coin, metadata });
+      }
+      if (!isCancelled && !isEqual(coinsData, coinMetaData)) {
+        setCoinMetaData(coinsData);
+        setLoading(false);
+      }
+    };
+
+    fetchCoinMetadata();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [coins, coinMetaData]);
 
   return { coinMetaData, loading, error };
 };
-
 export default useFetchCoinDetails;

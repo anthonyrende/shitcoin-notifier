@@ -26,6 +26,9 @@ import useFetchCoinPrice from '@/hooks/useFetchCoinPrice';
 
 import { fetchTokenStats } from '@/utils/fetchTokenStats';
 import { formatAsPercentage } from '@/utils/formatAsPercentage';
+import { useCoinStore } from '@/stores/useCoinStore';
+import { Coin } from '@/types/types';
+import useFromStore from '@/hooks/useFromStore';
 
 interface StatsCardProps {
   title: string;
@@ -90,23 +93,30 @@ function StatsCard(props: StatsCardProps) {
   );
 }
 
-export default function CoinStats({ coins, pubkey }) {
-  if (!coins) {
-    return;
-  }
+export default function CoinStats() {
   const router = useRouter();
-  const [tokenStats, setTokenStats] = useState([]);
+  const [tokenStats, setTokenStats] = useState<any[]>([]);
+  const [coinState, setCoinState] = useState<Coin[]>([]);
+  const coins = useFromStore(useCoinStore, state => state.coins);
+
+  const updateCoinMetaDataAction = useCoinStore(
+    state => state.updateCoinMetaData,
+  );
+  const updateCoinPricesAction = useCoinStore(state => state.updateCoinPrices);
+
+  useEffect(() => {
+    setCoinState(coins as Coin[]);
+  }, [coins]);
 
   const { coinMetaData, loading, error } = useFetchCoinDetails({
     coins,
-    pubkey,
   });
 
-  const {
-    coinPrices = [],
-    loading: priceLoading,
-    error: priceError,
-  } = useFetchCoinPrice({ coins });
+  useEffect(() => {
+    if (coinMetaData) {
+      updateCoinMetaDataAction(coins, coinMetaData);
+    }
+  }, [coinMetaData]);
 
   useEffect(() => {
     if (coins && coins.length > 0) {
@@ -114,7 +124,6 @@ export default function CoinStats({ coins, pubkey }) {
         try {
           const statsPromises = coins.map(coin => fetchTokenStats(coin.mint));
           const allStats = await Promise.all(statsPromises);
-          console.log('All token stats: ', allStats);
           setTokenStats(allStats);
         } catch (error) {
           console.error('Error fetching token stats for all coins:', error);
@@ -125,8 +134,10 @@ export default function CoinStats({ coins, pubkey }) {
     }
   }, [coins]);
 
-  console.log('coinsPriceeeeeeee: ', coinPrices);
-  console.log('tokenStats: ', tokenStats);
+  // console.log('coinsPriceeeeeeee: ', coinPrices);
+  console.log('coins', coinMetaData);
+
+  // console.log('tokenStats: ', tokenStats);
 
   return (
     <Box maxW="7xl" mx={'auto'} pt={5} px={{ base: 2, sm: 12, md: 17 }}>
@@ -152,20 +163,20 @@ export default function CoinStats({ coins, pubkey }) {
               <StatsCard
                 title={'Name'}
                 stat={
-                  coin.metadata.legacyMetadata?.name ||
-                  coin.metadata.onChainMetadata.metadata.data.name
+                  coin.metadata?.legacyMetadata?.name ||
+                  coin.metadata?.onChainMetadata?.metadata?.data?.name
                 }
                 icon={
                   <Img
                     src={
-                      coin.metadata.offChainMetadata.metadata?.image ||
+                      coin.metadata?.offChainMetadata?.metadata?.image ||
                       coin.metadata?.legacyMetadata?.logoURI
                     }
                     boxSize={'3em'}
                   />
                 }
               />
-              <StatsCard
+              {/* <StatsCard
                 title={'Current Price'}
                 stat={
                   <PriceDisplay
@@ -174,7 +185,7 @@ export default function CoinStats({ coins, pubkey }) {
                   />
                 }
                 icon={<FiServer size={'3em'} />}
-              />
+              /> */}
               <StatsCard
                 title={'30 Min Price Change'}
                 stat={

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 import { Route } from 'next';
 import { useRouter } from 'next/router';
@@ -21,7 +21,7 @@ import { BsPerson } from 'react-icons/bs';
 import { FiServer } from 'react-icons/fi';
 import { GoLocation } from 'react-icons/go';
 
-import useFetchCoinDetails from '@/hooks/useFetchCoinDetails';
+import { useFetchCoinDetails } from '@/hooks/useFetchCoinDetails';
 import useFetchCoinPrice from '@/hooks/useFetchCoinPrice';
 
 import { fetchTokenStats } from '@/utils/fetchTokenStats';
@@ -29,6 +29,7 @@ import { formatAsPercentage } from '@/utils/formatAsPercentage';
 import { useCoinStore } from '@/stores/useCoinStore';
 import { Coin } from '@/types/types';
 import useFromStore from '@/hooks/useFromStore';
+import { fetchTokenMetadata } from '@/utils/fetchTokenMetaData';
 
 interface StatsCardProps {
   title: string;
@@ -97,32 +98,51 @@ export default function CoinStats() {
   const router = useRouter();
   const [tokenStats, setTokenStats] = useState<any[]>([]);
   const [coinState, setCoinState] = useState<Coin[]>([]);
-  const coins = useFromStore(useCoinStore, state => state.coins);
-
-  const updateCoinMetaDataAction = useCoinStore(
-    state => state.updateCoinMetaData,
-  );
-  const updateCoinPricesAction = useCoinStore(state => state.updateCoinPrices);
-
-  useEffect(() => {
-    setCoinState(coins as Coin[]);
-  }, [coins]);
-
-  const { coinMetaData, loading, error } = useFetchCoinDetails({
-    coins,
-  });
-
-  useEffect(() => {
-    if (coinMetaData) {
-      updateCoinMetaDataAction(coins, coinMetaData);
-    }
-  }, [coinMetaData]);
+  const { coins, updateCoinMetaData } = useCoinStore([
+    'coins',
+    'updateCoinMetaData',
+  ]);
 
   useEffect(() => {
     if (coins && coins.length > 0) {
+      setCoinState(coins);
+    }
+  }, [coins]);
+
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+  const fetchCoinMetadata = useCallback(async () => {
+    try {
+      const coinsData = [];
+      const metaData = [];
+      for (let i = 0; i < coinState.length; i++) {
+        await sleep(200 * i);
+        const coin = coinState[i];
+        const mintAddress = coin.mint;
+        const metadata = await fetchTokenMetadata({ mintAddress });
+        metaData.push(metadata);
+        coinsData.push({ ...coin, metadata });
+      }
+
+      coinsData.forEach((coin, index) => {
+        updateCoinMetaData(coin);
+      });
+    } catch (error) {
+      console.error('Error fetching coin metadata:', error);
+    }
+  }, [coinState]);
+
+  useEffect(() => {
+    fetchCoinMetadata();
+  }, [fetchCoinMetadata, coinState]);
+
+  useEffect(() => {
+    if (coinState && coinState.length > 0) {
       const fetchAllStats = async () => {
         try {
-          const statsPromises = coins.map(coin => fetchTokenStats(coin.mint));
+          const statsPromises = coinState.map(coin =>
+            fetchTokenStats(coin.mint),
+          );
           const allStats = await Promise.all(statsPromises);
           setTokenStats(allStats);
         } catch (error) {
@@ -132,10 +152,28 @@ export default function CoinStats() {
 
       fetchAllStats();
     }
-  }, [coins]);
+  }, [coinState]);
+
+  useEffect(() => {
+    if (coinState && coinState.length > 0) {
+      const fetchAllStats = async () => {
+        try {
+          const statsPromises = coinState.map(coin =>
+            fetchTokenStats(coin.mint),
+          );
+          const allStats = await Promise.all(statsPromises);
+          setTokenStats(allStats);
+        } catch (error) {
+          console.error('Error fetching token stats for all coins:', error);
+        }
+      };
+
+      fetchAllStats();
+    }
+  }, [coinState]);
 
   // console.log('coinsPriceeeeeeee: ', coinPrices);
-  console.log('coins', coinMetaData);
+  console.log('coinState', coinState);
 
   // console.log('tokenStats: ', tokenStats);
 
@@ -147,34 +185,24 @@ export default function CoinStats() {
         py={10}
         fontWeight={'bold'}
       >
-        Your Coin Stats ({coins?.length})
+        Your Coin Stats
       </chakra.h1>
-      {coinMetaData.length > 0 &&
-        coinMetaData?.map((coin, index) => {
+      {coinState.length > 0 &&
+        coinState &&
+        coinState?.map((coin, index) => {
           return (
             <SimpleGrid
               columns={{ base: 1, md: 3 }}
               spacing={{ base: 5, lg: 8 }}
-              key={`${coins}_${index}`}
+              key={`${coin.mint}_${index}`}
               // onClick={() => {
               //   router.push(`/coin/${coin.mint}`);
               // }}
             >
               <StatsCard
                 title={'Name'}
-                stat={
-                  coin.metadata?.legacyMetadata?.name ||
-                  coin.metadata?.onChainMetadata?.metadata?.data?.name
-                }
-                icon={
-                  <Img
-                    src={
-                      coin.metadata?.offChainMetadata?.metadata?.image ||
-                      coin.metadata?.legacyMetadata?.logoURI
-                    }
-                    boxSize={'3em'}
-                  />
-                }
+                stat={coin?.metaData?.name}
+                icon={<Img src={coin?.metaData?.image} boxSize={'3em'} />}
               />
               {/* <StatsCard
                 title={'Current Price'}

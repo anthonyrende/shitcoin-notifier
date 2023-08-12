@@ -12,8 +12,8 @@ export const fetchTokenStats = async (tokenAddress: string) => {
     }),
   };
   const response = await fetch(url, options);
-  console.log('response', response);
+
   const data = await response.json();
-  console.log('dataaaaa', data.data);
+  // console.log('dataaaaa', data.data);
   return data.data;
 };

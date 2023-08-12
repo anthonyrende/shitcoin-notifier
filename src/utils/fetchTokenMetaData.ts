@@ -14,13 +14,10 @@ import { Connection, clusterApiUrl } from '@solana/web3.js';
  */
 
 export async function fetchTokenMetadata({ mintAddress }) {
-  try {
-    if (!mintAddress) {
-      return;
-    }
-    const url = `https://api.helius.xyz/v0/token-metadata?api-key=${process.env.NEXT_PUBLIC_HELIOUS_API_KEY}`;
-    const nftAddresses = [mintAddress];
+  const url = `https://api.helius.xyz/v0/token-metadata?api-key=${process.env.NEXT_PUBLIC_HELIOUS_API_KEY}`;
+  const nftAddresses = [mintAddress];
 
+  try {
     const response = await fetch(url, {
       method: 'POST',
       headers: {

@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { fetchTokenMetadata } from '@/utils/fetchTokenMetaData';
 import { Coin } from '@/types/types';
 
@@ -9,6 +9,8 @@ export const useFetchCoinDetails = ({ coins }: Coin[]) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const prevCoinsLength = useRef(coins.length);
+
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
   useEffect(() => {
@@ -16,6 +18,14 @@ export const useFetchCoinDetails = ({ coins }: Coin[]) => {
       console.log('Coins array is empty or undefined');
       return;
     }
+    console.log('coinslength', coins.length, prevCoinsLength.current);
+    if (coins.length <= prevCoinsLength.current) {
+      // No new coins have been added, so don't fetch metadata.
+      return;
+    }
+
+    // Update the ref to the new coins length
+    prevCoinsLength.current = coins.length;
 
     let isCancelled = false;
 
@@ -34,8 +44,13 @@ export const useFetchCoinDetails = ({ coins }: Coin[]) => {
         });
         coinsData.push({ ...coin, metadata });
       }
-      if (!isCancelled && !isEqual(coinsData, coinMetaData)) {
-        setCoinMetaData(coinsData);
+      if (!isCancelled) {
+        setCoinMetaData(prevMetaData => {
+          if (isEqual(prevMetaData, coinsData)) {
+            return prevMetaData;
+          }
+          return coinsData;
+        });
         setLoading(false);
       }
     };
@@ -45,8 +60,7 @@ export const useFetchCoinDetails = ({ coins }: Coin[]) => {
     return () => {
       isCancelled = true;
     };
-  }, [coins, coinMetaData]);
+  }, [coins]);
 
   return { coinMetaData, loading, error };
 };
-export default useFetchCoinDetails;

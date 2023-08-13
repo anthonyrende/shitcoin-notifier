@@ -30,6 +30,7 @@ import { useCoinStore } from '@/stores/useCoinStore';
 import { Coin } from '@/types/types';
 import useFromStore from '@/hooks/useFromStore';
 import { fetchTokenMetadata } from '@/utils/fetchTokenMetaData';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 interface StatsCardProps {
   title: string;
@@ -96,18 +97,20 @@ function StatsCard(props: StatsCardProps) {
 
 export default function CoinStats() {
   const router = useRouter();
+  const { publicKey, disconnect, disconnecting } = useWallet();
   const [tokenStats, setTokenStats] = useState<any[]>([]);
   const [coinState, setCoinState] = useState<Coin[]>([]);
-  const { coins, updateCoinMetaData } = useCoinStore([
+  const { coins, updateCoinMetaData, addToWatchList } = useCoinStore([
     'coins',
     'updateCoinMetaData',
+    'addToWatchList',
   ]);
 
   useEffect(() => {
     if (coins && coins.length > 0) {
       setCoinState(coins);
     }
-  }, [coins]);
+  }, [coins, disconnecting]);
 
   const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -154,24 +157,6 @@ export default function CoinStats() {
     }
   }, [coinState]);
 
-  useEffect(() => {
-    if (coinState && coinState.length > 0) {
-      const fetchAllStats = async () => {
-        try {
-          const statsPromises = coinState.map(coin =>
-            fetchTokenStats(coin.mint),
-          );
-          const allStats = await Promise.all(statsPromises);
-          setTokenStats(allStats);
-        } catch (error) {
-          console.error('Error fetching token stats for all coins:', error);
-        }
-      };
-
-      fetchAllStats();
-    }
-  }, [coinState]);
-
   // console.log('coinsPriceeeeeeee: ', coinPrices);
   console.log('coinState', coinState);
 
@@ -185,7 +170,7 @@ export default function CoinStats() {
         py={10}
         fontWeight={'bold'}
       >
-        Your Coin Stats
+        Your Wallet Coins
       </chakra.h1>
       {coinState.length > 0 &&
         coinState &&
@@ -224,8 +209,15 @@ export default function CoinStats() {
                 icon={<BsPerson size={'3em'} />}
               />
               <StatsCard
-                title={'Create Notification'}
-                stat={<Button colorScheme="purple">Create</Button>}
+                title={'Add to Watchlist'}
+                stat={
+                  <Button
+                    onClick={() => addToWatchList(coin)}
+                    colorScheme="purple"
+                  >
+                    Add
+                  </Button>
+                }
                 icon={<GoLocation size={'3em'} />}
               />
             </SimpleGrid>

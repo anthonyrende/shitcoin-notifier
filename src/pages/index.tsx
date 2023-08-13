@@ -21,11 +21,11 @@ import { LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 import { useFetchCoinsFromWallet } from '@/hooks/useFetchCoinFromWallet';
-import useFetchCoinPrice from '@/hooks/useFetchCoinPrice';
 
 import coinDummyData from '../../coinDummyData.json';
 import AddYourCoin from '@/components/AddYourCoin';
 import { useCoinStore } from '@/stores/useCoinStore';
+import WatchListTable from '@/components/WatchlistTable';
 
 type Token = {
   tokenAccount: string;
@@ -35,6 +35,7 @@ type Token = {
 };
 
 const Home = () => {
+  const [coinstate, setCoinstate] = useState();
   const { coins, addToCoins, clearState } = useCoinStore([
     'coins',
     'addToCoins',
@@ -43,32 +44,36 @@ const Home = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
-  const { publicKey, disconnect } = useWallet();
+  const { publicKey, disconnect, disconnecting, connecting } = useWallet();
   const coinsFromWallet = useFetchCoinsFromWallet(
     publicKey,
     connection,
     TOKEN_PROGRAM_ID,
   );
-  console.log('publicKey', publicKey);
+
+  useEffect(() => {
+    setCoinstate(coins);
+  }, [coins]);
+
   useEffect(() => {
     if (coinsFromWallet && coinsFromWallet.length > 0) {
       console.log('coinsFromWallet here');
       coinsFromWallet.forEach(coin => {
         // Only add the coin if it's not already in the global state
-        if (!coins.some(c => c.mint === coin.mint)) {
+        if (coinstate && !coinstate.some(c => c.mint === coin.mint)) {
           addToCoins(coin);
         }
       });
     }
-  }, [coinsFromWallet, coins, addToCoins, publicKey, connection]);
-
-  console.log('coinsFromWallet', coinsFromWallet);
+  }, [coinsFromWallet, coins, addToCoins, publicKey, connection, connecting]);
 
   useEffect(() => {
-    if (disconnect) {
+    if (disconnecting) {
+      console.log('disconnecting');
+      disconnect();
       clearState();
     }
-  }, [disconnect, clearState]);
+  }, [disconnect, clearState, disconnecting]);
 
   return (
     <MainLayout>
@@ -105,6 +110,7 @@ const Home = () => {
         <AddYourCoin isOpen={isOpen} onOpen={onOpen} onClose={onClose} />
       </Link>
       <>
+        <WatchListTable />
         <CoinStats />
       </>
     </MainLayout>

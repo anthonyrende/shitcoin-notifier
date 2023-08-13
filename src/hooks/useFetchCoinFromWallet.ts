@@ -1,4 +1,5 @@
 import { Coin } from '@/types/types';
+import { useConnection, useWallet } from '@solana/wallet-adapter-react';
 import { Connection, PublicKey } from '@solana/web3.js';
 import { useEffect, useState, useCallback } from 'react';
 
@@ -10,13 +11,13 @@ type FetchCoinsFromWalletProps = {
 };
 
 export function useFetchCoinsFromWallet(
-  owner: PublicKey | null,
+  owner: PublicKey,
   connection: Connection,
   TOKEN_PROGRAM_ID: PublicKey,
   filters = {},
 ) {
   const [coinsFromWallet, setCoins] = useState<Coin[]>([]);
-
+  const { connecting, disconnecting } = useWallet();
   const fetchCoinsFromWallet = useCallback(async () => {
     let response = await connection?.getParsedTokenAccountsByOwner(owner, {
       programId: TOKEN_PROGRAM_ID,
@@ -42,7 +43,7 @@ export function useFetchCoinsFromWallet(
     }
 
     setCoins(coinsData);
-  }, []);
+  }, [connecting, disconnecting]);
 
   useEffect(() => {
     if (!connection || !owner) return;

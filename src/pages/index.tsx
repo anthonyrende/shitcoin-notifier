@@ -23,7 +23,7 @@ import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 import { useFetchCoinsFromWallet } from '@/hooks/useFetchCoinFromWallet';
 
 import coinDummyData from '../../coinDummyData.json';
-import AddYourCoin from '@/components/AddYourCoin';
+import AddYourCoin from '@/components/Modals/AddYourCoin';
 import { useCoinStore } from '@/stores/useCoinStore';
 import WatchListTable from '@/components/WatchlistTable';
 

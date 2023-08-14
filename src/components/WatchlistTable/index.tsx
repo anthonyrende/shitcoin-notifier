@@ -20,15 +20,19 @@ import {
   useColorModeValue,
   Image,
   Text,
+  useDisclosure,
 } from '@chakra-ui/react';
 // import { Box } from "framer-motion"
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { BsPencil, BsPencilSquare } from 'react-icons/bs';
-import { FiDelete } from 'react-icons/fi';
+import { FiAlertCircle, FiDelete } from 'react-icons/fi';
+import CreateAlertModal from '../Modals/CreateAlertModal';
+import { PriceDisplay } from '../PriceDisplay';
 
 const WatchListTable = () => {
-  const [coinstate, setCoinstate] = useState();
+  const [watchListCoins, setWatchListCoins] = useState();
+  const [coinState, setCoinState] = useState();
   const { coins, addToCoins, clearState, watchList, removeFromWatchList } =
     useCoinStore([
       'coins',
@@ -38,8 +42,18 @@ const WatchListTable = () => {
       'removeFromWatchList',
     ]);
   useEffect(() => {
-    setCoinstate(watchList);
+    setWatchListCoins(watchList);
   }, [watchList]);
+
+  useEffect(() => {
+    setCoinState(coins);
+  }, [coins]);
+
+  const {
+    isOpen: isCreateAlertOpen,
+    onOpen: onCreateAlertOpen,
+    onClose: onCreateAlertClose,
+  } = useDisclosure();
 
   const gray50 = useColorModeValue('gray.50', 'gray.700');
   const bg = useColorModeValue('purple.700', 'gray.800');
@@ -78,7 +92,7 @@ const WatchListTable = () => {
           </Thead>
 
           <Tbody id="tbody">
-            {coinstate?.map(coin => (
+            {watchListCoins?.map((coin, index) => (
               <Tr
                 key={coin.mint}
                 bg={bg}
@@ -108,7 +122,9 @@ const WatchListTable = () => {
                   whiteSpace={'nowrap'}
                   w={{ base: '24', md: '52' }}
                 >
-                  " test"
+                  {coinState &&
+                    coinState.find(c => c.mint === coin.mint)?.statsData[0]
+                      ?.priceChange}
                 </Td>
                 <Td
                   fontSize={'sm'}
@@ -118,7 +134,18 @@ const WatchListTable = () => {
                   whiteSpace={'nowrap'}
                   w={{ base: '24', md: '52' }}
                 >
-                  test
+                  {coinState && (
+                    <PriceDisplay
+                      price={
+                        coinState.find(c => c.mint === coin.mint)?.priceData
+                          ?.price
+                      }
+                      decimals={
+                        coinState.find(c => c.mint === coin.mint)?.statsData[0]
+                          ?.decimals
+                      }
+                    />
+                  )}
                 </Td>
                 <Td>
                   <Flex justifyContent={'flex-end'} align={'center'}>
@@ -130,13 +157,9 @@ const WatchListTable = () => {
                         align={'center'}
                         margin={'auto'}
                       >
-                        {coin ? (
+                        {coin.watching ? (
                           <>
-                            {/* <StarFilledIcon
-                                color={'orange.300'}
-                                h={4}
-                                w={4}
-                              /> */}
+                            <FiAlertCircle size={20} />
                             <Text
                               fontSize="sm"
                               // color={'brand.500'}
@@ -153,7 +176,7 @@ const WatchListTable = () => {
                         ) : (
                           <>
                             <Tooltip
-                              label="test"
+                              label="Create new alert"
                               hasArrow
                               arrowSize={10}
                               placement="top"
@@ -163,16 +186,21 @@ const WatchListTable = () => {
                                 variant={'outline'}
                                 size={'sm'}
                                 onClick={() => {
-                                  // onConfirmationModalOpen();
+                                  onCreateAlertOpen();
                                 }}
                                 _hover={{
-                                  color: 'orange.400',
+                                  color: 'purple.400',
                                 }}
                                 color="white"
                               >
-                                default
+                                Create Price Alert
                               </Button>
                             </Tooltip>
+                            <CreateAlertModal
+                              isOpen={isCreateAlertOpen}
+                              onClose={onCreateAlertClose}
+                              onOpen={onCreateAlertOpen}
+                            />
                           </>
                         )}
                       </Flex>

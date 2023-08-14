@@ -110,7 +110,9 @@ const Home = () => {
         <AddYourCoin isOpen={isOpen} onOpen={onOpen} onClose={onClose} />
       </Link>
       <>
-        <WatchListTable />
+        <Stack direction="row" spacing={4} mt={8} w="90%">
+          <WatchListTable />
+        </Stack>
         <CoinStats />
       </>
     </MainLayout>

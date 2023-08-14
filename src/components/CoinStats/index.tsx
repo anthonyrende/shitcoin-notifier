@@ -15,6 +15,7 @@ import {
   StatNumber,
   useColorModeValue,
   Tooltip,
+  Text,
 } from '@chakra-ui/react';
 import { ReactNode } from 'react';
 import { BsPerson } from 'react-icons/bs';
@@ -31,36 +32,11 @@ import { Coin } from '@/types/types';
 import useFromStore from '@/hooks/useFromStore';
 import { fetchTokenMetadata } from '@/utils/fetchTokenMetaData';
 import { useWallet } from '@solana/wallet-adapter-react';
-
+import { PriceDisplay } from '../PriceDisplay';
 interface StatsCardProps {
   title: string;
   stat: string | JSX.Element;
   icon: ReactNode;
-}
-
-function PriceDisplay({ price, decimals }) {
-  const router = useRouter();
-  if (!price || !Number.isFinite(price) || !Number.isFinite(decimals)) {
-    return 'N/A';
-  }
-
-  // Convert the price to a string
-  let priceString = price.toString();
-  if (priceString.includes('.')) {
-    // Remove the "0." prefix
-    priceString = priceString.substring(2);
-  }
-  const zeros = '0'.repeat(decimals);
-  // Calculate the full price with padding zeroes based on the number of decimals
-  const fullPrice = `0.${zeros}${priceString}`;
-
-  const shortPrice = `0.0...${fullPrice.slice(-6)}`;
-
-  return (
-    <Tooltip hasArrow label={`$${fullPrice}`} bg="purple.600">
-      <span>{shortPrice}</span>
-    </Tooltip>
-  );
 }
 
 function StatsCard(props: StatsCardProps) {
@@ -68,14 +44,16 @@ function StatsCard(props: StatsCardProps) {
   return (
     <Stat
       px={{ base: 2, md: 4 }}
-      py={'5'}
+      py={'3'}
+      my="2"
       shadow={'xl'}
       border={'1px solid'}
       borderColor={useColorModeValue('gray.800', 'gray.500')}
       rounded={'lg'}
+      // w={'sm'}
     >
       <Flex justifyContent={'space-between'}>
-        <Box pl={{ base: 2, md: 4 }}>
+        <Box pl={{ base: 2, md: 0 }}>
           <StatLabel fontWeight={'medium'} isTruncated>
             {title}
           </StatLabel>
@@ -87,6 +65,7 @@ function StatsCard(props: StatsCardProps) {
           my={'auto'}
           color={useColorModeValue('gray.800', 'gray.200')}
           alignContent={'center'}
+          justifySelf={'center'}
         >
           {icon}
         </Box>
@@ -175,22 +154,26 @@ export default function CoinStats() {
   console.log('coinState', coinState);
 
   return (
-    <Box maxW="7xl" mx={'auto'} pt={5} px={{ base: 2, sm: 12, md: 17 }}>
+    <Box maxW="78xl" mx={'auto'} pt={5} px={{ base: 2, sm: 12, md: 17 }}>
       <chakra.h1
         textAlign={'center'}
         fontSize={'4xl'}
-        py={10}
+        // py={20}
+        pt="10"
         fontWeight={'bold'}
       >
         Your Wallet Coins
       </chakra.h1>
+      <Text fontSize={'sm'} textAlign={'center'} pb="10">
+        If you coin doesnt appear, it likely means there is no liquidity for it
+      </Text>
       {coinState.length > 0 &&
         coinState &&
         coinState?.map((coin, index) => {
           return (
             <SimpleGrid
-              columns={{ base: 1, md: 3 }}
-              spacing={{ base: 5, lg: 8 }}
+              columns={{ base: 1, md: 4 }}
+              spacing={{ base: 5, lg: 4 }}
               key={`${coin.mint}_${index}`}
               // onClick={() => {
               //   router.push(`/coin/${coin.mint}`);
@@ -218,20 +201,19 @@ export default function CoinStats() {
                     ? formatAsPercentage(tokenStats[index][5]?.priceChange)
                     : 'N/A'
                 }
-                icon={<BsPerson size={'3em'} />}
+                // icon={<BsPerson size={'3em'} />}
               />
-              <StatsCard
-                title={'Add to Watchlist'}
-                stat={
-                  <Button
-                    onClick={() => addToWatchList(coin)}
-                    colorScheme="purple"
-                  >
-                    Add
-                  </Button>
-                }
-                icon={<GoLocation size={'3em'} />}
-              />
+
+              <Button
+                onClick={() => addToWatchList(coin)}
+                colorScheme="purple"
+                mb={{ base: 7, md: 0 }}
+                w="200px"
+                justifySelf={'center'}
+                alignSelf={'center'}
+              >
+                Add to Watchlist
+              </Button>
             </SimpleGrid>
           );
         })}

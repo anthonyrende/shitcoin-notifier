@@ -107,6 +107,16 @@ const useCoinStoreBase = create(
           set({ coins: updatedCoins });
         }
       },
+      updateTokenStats: (mint: string, statsData: any) => {
+        const coins = get().coins;
+        const updatedCoins = coins.map(coin =>
+          coin.mint === mint ? { ...coin, statsData } : coin,
+        );
+
+        if (!_.isEqual(coins, updatedCoins)) {
+          set({ coins: updatedCoins });
+        }
+      },
     }),
     {
       name: 'coin-storage',

@@ -1,32 +1,33 @@
 import { useCoinStore } from '@/stores/useCoinStore';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 const useFetchCoinPrice = ({ coins } = {}) => {
   const [coinPrices, setCoinPrices] = useState([]);
-  const [coinMints, setCoinMints] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const updateCoinPrices = useCoinStore(state => state.updateCoinPrices);
+  const prevCoinsLength = useRef<number>(coins.length); // Initialize the ref with the initial coins length
 
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+  const { updateCoinPrices } = useCoinStore(['updateCoinPrices']);
 
   const fetchCoinPrice = useCallback(async () => {
-    // if (!coins || coins.length === 0) {
-    //   console.log('Coins array is empty or undefined');
-    //   return;
-    // }
+    if (coins.length <= prevCoinsLength.current) {
+      // No new coins have been added, so don't fetch metadata.
+      return;
+    }
+
+    // Update the ref to the new coins length
+    prevCoinsLength.current = coins.length;
 
     setLoading(true);
     setError(null);
 
     const coinsPriceData = [];
-    // Filter out invalid entries and extract mints
-    const newMints = coins
+
+    // Filter out invalid entries and extract mints directly
+    const coinMints = coins
       .filter(coin => coin && typeof coin === 'object' && coin.mint)
       .map(coin => coin.mint);
-
-    setCoinMints(prevState => [...prevState, ...newMints]);
 
     const url = 'https://rest-api.hellomoon.io/v0/token/price/batched';
     const options = {
@@ -38,30 +39,38 @@ const useFetchCoinPrice = ({ coins } = {}) => {
       },
       body: JSON.stringify({ mints: coinMints }),
     };
+
     try {
       const response = await fetch(url, options);
       const data = await response.json();
 
       data.data.forEach(priceData => {
-        const mint = priceData.mint; // You might need to adjust this if the structure of priceData is different
+        const mint = priceData.mint;
         updateCoinPrices(mint, priceData);
       });
 
       coinsPriceData.push({ ...coins, priceData: data.data[0] });
     } catch (err) {
       console.error('Error fetching coin price for:', err);
-      // You can decide whether to continue the loop or stop here
     }
 
     setCoinPrices(coinsPriceData);
     setLoading(false);
-  }, [coins]);
+  }, [coins, updateCoinPrices]);
 
   useEffect(() => {
-    if (coins && coins.length > 0) {
-      fetchCoinPrice();
-    }
-  }, [fetchCoinPrice, coins]);
+    if (!coinPrices || !Array.isArray(coinPrices)) return;
+
+    // Iterate over the coinPrices array and update each coin's price in the store
+    coinPrices.forEach(coinPriceData => {
+      if (coinPriceData.priceData && coinPriceData.priceData.mints) {
+        updateCoinPrices(
+          coinPriceData.priceData.mints,
+          coinPriceData.priceData,
+        );
+      }
+    });
+  }, [coinPrices, updateCoinPrices]);
 
   return { coinPrices, loading, error };
 };

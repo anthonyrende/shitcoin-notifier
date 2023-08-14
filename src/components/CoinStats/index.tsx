@@ -100,11 +100,13 @@ export default function CoinStats() {
   const { publicKey, disconnect, disconnecting } = useWallet();
   const [tokenStats, setTokenStats] = useState<any[]>([]);
   const [coinState, setCoinState] = useState<Coin[]>([]);
-  const { coins, updateCoinMetaData, addToWatchList } = useCoinStore([
-    'coins',
-    'updateCoinMetaData',
-    'addToWatchList',
-  ]);
+  const { coins, updateCoinMetaData, addToWatchList, updateTokenStats } =
+    useCoinStore([
+      'coins',
+      'updateCoinMetaData',
+      'addToWatchList',
+      'updateTokenStats',
+    ]);
 
   useEffect(() => {
     if (coins && coins.length > 0) {
@@ -147,6 +149,10 @@ export default function CoinStats() {
             fetchTokenStats(coin.mint),
           );
           const allStats = await Promise.all(statsPromises);
+          allStats.forEach((stats, index) => {
+            const mint = coinState[index].mint;
+            updateTokenStats(mint, stats);
+          });
           setTokenStats(allStats);
         } catch (error) {
           console.error('Error fetching token stats for all coins:', error);
@@ -157,10 +163,16 @@ export default function CoinStats() {
     }
   }, [coinState]);
 
+  const { coinPrices, loading, error } = useFetchCoinPrice({
+    coins: coinState,
+  });
+
+  useEffect(() => {
+    if (loading || error) return; // Handle loading or error if needed
+  }, [coinPrices, loading, error]);
+
   // console.log('coinsPriceeeeeeee: ', coinPrices);
   console.log('coinState', coinState);
-
-  // console.log('tokenStats: ', tokenStats);
 
   return (
     <Box maxW="7xl" mx={'auto'} pt={5} px={{ base: 2, sm: 12, md: 17 }}>
@@ -189,16 +201,16 @@ export default function CoinStats() {
                 stat={coin?.metaData?.name}
                 icon={<Img src={coin?.metaData?.image} boxSize={'3em'} />}
               />
-              {/* <StatsCard
+              <StatsCard
                 title={'Current Price'}
                 stat={
                   <PriceDisplay
-                    price={coinPrices[index]?.priceData?.price}
-                    decimals={coinPrices[index]?.decimals}
+                    price={coin?.priceData?.price}
+                    decimals={coin?.statsData[5]?.decimals}
                   />
                 }
                 icon={<FiServer size={'3em'} />}
-              /> */}
+              />
               <StatsCard
                 title={'30 Min Price Change'}
                 stat={

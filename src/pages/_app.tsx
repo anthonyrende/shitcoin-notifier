@@ -5,6 +5,7 @@ import type { AppProps } from 'next/app';
 import '@fontsource/inter/variable.css';
 import { theme } from '@/styles/theme';
 import { NextSeo } from 'next-seo';
+import { SessionProvider } from 'next-auth/react';
 
 const metadata = {
   title: 'Shitcoin notifier',
@@ -38,9 +39,11 @@ const App = ({ Component, pageProps }: AppProps) => {
         title={metadata.title}
       />
 
-      <WalletWrapper>
-        <Component {...pageProps} />
-      </WalletWrapper>
+      <SessionProvider>
+        <WalletWrapper>
+          <Component {...pageProps} />
+        </WalletWrapper>
+      </SessionProvider>
     </ChakraProvider>
   );
 };

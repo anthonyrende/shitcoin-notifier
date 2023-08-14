@@ -1,3 +1,4 @@
+import Header from '@/components/Header';
 import Nav from '@/components/Nav';
 import { Flex } from '@chakra-ui/react';
 import type { FC, ReactNode } from 'react';
@@ -22,7 +23,7 @@ const MainLayout: FC<IMainLayoutProps> = ({ children }) => {
       textAlign="center"
       w="100vw"
     >
-      <Nav />
+      <Header />
       {children}
     </Flex>
   );

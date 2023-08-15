@@ -26,6 +26,8 @@ import { useEffect } from 'react';
 import { getCsrfToken, signIn, signOut, useSession } from 'next-auth/react';
 import { Router, useRouter } from 'next/router';
 
+import { supabaseAuth } from '@/lib/supabaseAuth';
+
 const WalletMultiButton = dynamic(
   () =>
     import('@solana/wallet-adapter-react-ui').then(
@@ -66,11 +68,21 @@ export const Header: FC = () => {
         redirect: false,
         signature: serializedSignature,
       });
+
+      supabaseAuth
+        .createUser({
+          public_key: publicKey?.toBase58(),
+        })
+        .then(res => {
+          console.log(res);
+        })
+        .catch(err => {
+          console.log(err);
+        });
     } catch (error) {
-      console.log(error);
+      console.error(error);
     }
   };
-
   useEffect(() => {
     if (connected && status === 'unauthenticated') {
       handleSignIn();

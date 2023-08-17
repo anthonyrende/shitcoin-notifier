@@ -69,16 +69,24 @@ export const Header: FC = () => {
         signature: serializedSignature,
       });
 
-      supabaseAuth
-        .createUser({
-          public_key: publicKey?.toBase58(),
-        })
-        .then(res => {
-          console.log(res);
-        })
-        .catch(err => {
-          console.log(err);
-        });
+      // await supabaseAuth
+      //   .createUserInDatabase(publicKey?.toBase58())
+      //   .then(res => {
+      //     console.log('res', res);
+      //   })
+      //   .catch(err => {
+      //     console.log('err', err, signinMessage);
+      //   });
+      // supabaseAuth
+      //   .createUser({
+      //     public_key: publicKey?.toBase58(),
+      //   })
+      //   .then(res => {
+      //     console.log(res);
+      //   })
+      //   .catch(err => {
+      //     console.log(err);
+      //   });
     } catch (error) {
       console.error(error);
     }

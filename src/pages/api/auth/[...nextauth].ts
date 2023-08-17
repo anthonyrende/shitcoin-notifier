@@ -3,6 +3,55 @@ import NextAuth from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { getCsrfToken } from 'next-auth/react';
 import { SigninMessage } from '@/utils/signInMessage';
+import { SupabaseAdapter } from '@auth/supabase-adapter';
+import { supabaseAuth } from '@/lib/supabaseAuth';
+import { supabase } from '@/lib/supabaseClient';
+
+// Checking user in database
+async function checkUserInDatabase(publicKey) {
+  const { data, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('public_key', publicKey)
+    .single();
+
+  if (error) throw error;
+
+  return data;
+}
+
+// Creating user in database
+async function createUserInDatabase(signinMessage) {
+  const { data, error } = await supabase
+    .from('users')
+    .insert({
+      public_key: signinMessage.publicKey,
+    })
+    .single();
+
+  if (error) throw error;
+
+  return data;
+}
+
+// Creating account in database (indicating Solana as the provider)
+async function createAccountInDatabase(userId, publicKey) {
+  const { data, error } = await supabase
+    .from('next_auth.accounts')
+    .insert([
+      {
+        type: 'wallet',
+        provider: 'Solana',
+        providerAccountId: publicKey,
+        userId: userId,
+      },
+    ])
+    .single();
+
+  if (error) throw error;
+
+  return data;
+}
 
 export default async function auth(req: NextApiRequest, res: NextApiResponse) {
   const providers = [
@@ -27,7 +76,6 @@ export default async function auth(req: NextApiRequest, res: NextApiResponse) {
           if (signinMessage.domain !== nextAuthUrl.host) {
             return null;
           }
-
           const csrfToken = await getCsrfToken({ req: { ...req, body: null } });
 
           if (signinMessage.nonce !== csrfToken) {
@@ -40,6 +88,25 @@ export default async function auth(req: NextApiRequest, res: NextApiResponse) {
 
           if (!validationResult)
             throw new Error('Could not validate the signed message');
+
+          let user = await checkUserInDatabase(signinMessage.publicKey)
+            .then(res => {
+              console.log('found user in database', res);
+            })
+            .catch(err => {
+              console.log('err, trying to create a new user', err);
+              let newUser = createUserInDatabase(signinMessage)
+                .then(res => {
+                  console.log('created a new user', res);
+                })
+                .catch(err => {
+                  console.log(
+                    'err failed to create a new user',
+                    err,
+                    signinMessage,
+                  );
+                });
+            });
 
           return {
             id: signinMessage.publicKey,
@@ -76,5 +143,9 @@ export default async function auth(req: NextApiRequest, res: NextApiResponse) {
         return session;
       },
     },
+    // adapter: SupabaseAdapter({
+    //   url: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    //   secret: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    // }),
   });
 }

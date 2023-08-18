@@ -33,6 +33,7 @@ import useFromStore from '@/hooks/useFromStore';
 import { fetchTokenMetadata } from '@/utils/fetchTokenMetaData';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PriceDisplay } from '../PriceDisplay';
+import { PublicKey } from '@solana/web3.js';
 interface StatsCardProps {
   title: string;
   stat: string | JSX.Element;
@@ -153,6 +154,32 @@ export default function CoinStats() {
   // console.log('coinsPriceeeeeeee: ', coinPrices);
   console.log('coinState', coinState);
 
+  const handleAddToWatchList = async (
+    coin: Coin,
+    passedPublicKey: PublicKey,
+  ) => {
+    try {
+      const response = await fetch('/api/watchlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ coin, passedPublicKey }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Coin added to watchlist:', data);
+        addToWatchList(coin);
+      } else {
+        const { error } = await response.json();
+        console.error('Failed to add coin to watchlist:', error);
+      }
+    } catch (err) {
+      console.error('Error while calling the API:', err);
+    }
+  };
+
   return (
     <Box maxW="78xl" mx={'auto'} pt={5} px={{ base: 2, sm: 12, md: 17 }}>
       <chakra.h1
@@ -189,7 +216,7 @@ export default function CoinStats() {
                 stat={
                   <PriceDisplay
                     price={coin?.priceData?.price}
-                    decimals={coin?.statsData[5]?.decimals}
+                    decimals={coin?.statsData && coin?.statsData[5]?.decimals}
                   />
                 }
                 icon={<FiServer size={'3em'} />}
@@ -205,7 +232,7 @@ export default function CoinStats() {
               />
 
               <Button
-                onClick={() => addToWatchList(coin)}
+                onClick={() => handleAddToWatchList(coin, publicKey.toBase58())}
                 colorScheme="purple"
                 mb={{ base: 7, md: 0 }}
                 w="200px"

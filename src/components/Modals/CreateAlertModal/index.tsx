@@ -1,3 +1,5 @@
+import React, { useState } from 'react';
+
 import {
   Modal,
   ModalOverlay,
@@ -8,6 +10,9 @@ import {
   ModalCloseButton,
   Button,
   Input,
+  Select,
+  HStack,
+  Text,
 } from '@chakra-ui/react';
 
 const {
@@ -18,8 +23,93 @@ const {
 
 import WebSocketComponent from '@/components/WebSocketComponent';
 import { getTokenPrice } from '@/utils/getTokenPriceRaydium';
+import { FiDelete } from 'react-icons/fi';
+
+const ConditionMenu = () => {
+  const [conditions, setConditions] = useState([
+    {
+      operator: '=',
+      value: '',
+      type: '%',
+    },
+  ]);
+
+  const addCondition = () => {
+    setConditions([
+      ...conditions,
+      {
+        operator: '=',
+        value: '',
+        type: '%',
+      },
+    ]);
+  };
+
+  const removeCondition = index => {
+    setConditions(conditions.filter((_, i) => i !== index));
+  };
+
+  const updateCondition = (index, key, value) => {
+    const newConditions = [...conditions];
+    newConditions[index][key] = value;
+    setConditions(newConditions);
+  };
+
+  return (
+    <div>
+      {conditions.map((condition, index) => (
+        <div key={index}>
+          <HStack spacing={4} py="2">
+            <Select
+              value={condition.operator}
+              onChange={e => updateCondition(index, 'operator', e.target.value)}
+              size="lg"
+              variant="filled"
+              w="32"
+            >
+              <option value="=">=</option>
+              <option value="!=">!=</option>
+              <option value=">">&gt;</option>
+            </Select>
+            <Input
+              value={condition.value}
+              onChange={e => updateCondition(index, 'value', e.target.value)}
+              placeholder="Enter Value"
+              size="lg"
+              variant="filled"
+            />
+            <Select
+              value={condition.type}
+              onChange={e => updateCondition(index, 'type', e.target.value)}
+              placeholder="%"
+              size="lg"
+              variant="filled"
+              w="32"
+            >
+              <option value="%">%</option>
+              <option value="exact">Exact Price</option>
+            </Select>
+            <button onClick={() => removeCondition(index)}>
+              <FiDelete />
+            </button>
+          </HStack>
+        </div>
+      ))}
+      <Button
+        mt={4}
+        variant="solid"
+        colorScheme="purple"
+        onClick={() => addCondition()}
+      >
+        Or ...
+      </Button>
+    </div>
+  );
+};
 
 export default function CreateAlertModal({ isOpen, onOpen, onClose }) {
+  const [numOfConditions, setNumOfConditions] = useState(1);
+
   const subscriptionData = {
     mint: 'So11111111111111111111111111111111111111112',
     amount: 30,
@@ -84,6 +174,7 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose }) {
         onClose={onClose}
         isOpen={isOpen}
         motionPreset="slideInBottom"
+        size="xl"
       >
         <ModalOverlay />
         <ModalContent
@@ -93,12 +184,13 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose }) {
             'linear(to-b, orange.100, purple.300)',
           ]}
         >
-          <ModalHeader color={'gray.700'}>
+          <ModalHeader color={'gray.700'} fontSize="xl" fontWeight="bold">
             Create a new alert for your shitcoin
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Input placeholder="Enter Address" size="lg" variant="filled" />
+            <Text color={'gray.700'}>Set condition </Text>
+            <ConditionMenu />
           </ModalBody>
           <ModalFooter>
             <Button
@@ -109,7 +201,7 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose }) {
                 'linear(to-b, orange.100, purple.300)',
               ]}
               onClick={() => {
-                createSubscription();
+                // createSubscription();
               }}
             >
               Create

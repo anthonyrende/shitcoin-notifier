@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import {
   Modal,
@@ -24,40 +24,26 @@ const {
 import WebSocketComponent from '@/components/WebSocketComponent';
 import { getTokenPrice } from '@/utils/getTokenPriceRaydium';
 import { FiDelete } from 'react-icons/fi';
+import { useConditionStore } from '@/stores/useConditionStore';
 
 const ConditionMenu = () => {
-  const [conditions, setConditions] = useState([
-    {
-      operator: '=',
-      value: '',
-      type: '%',
-    },
-  ]);
-
-  const addCondition = () => {
-    setConditions([
-      ...conditions,
-      {
-        operator: '=',
-        value: '',
-        type: '%',
-      },
+  const { conditions, addCondition, removeCondition, updateCondition } =
+    useConditionStore([
+      'conditions',
+      'addCondition',
+      'removeCondition',
+      'updateCondition',
     ]);
-  };
 
-  const removeCondition = index => {
-    setConditions(conditions.filter((_, i) => i !== index));
-  };
+  const [conditionsState, setConditionsState] = useState(conditions);
 
-  const updateCondition = (index, key, value) => {
-    const newConditions = [...conditions];
-    newConditions[index][key] = value;
-    setConditions(newConditions);
-  };
+  useEffect(() => {
+    setConditionsState(conditions);
+  }, [conditions]);
 
   return (
     <div>
-      {conditions.map((condition, index) => (
+      {conditionsState.map((condition, index) => (
         <div key={index}>
           <HStack spacing={4} py="2">
             <Select
@@ -108,64 +94,15 @@ const ConditionMenu = () => {
 };
 
 export default function CreateAlertModal({ isOpen, onOpen, onClose }) {
-  const [numOfConditions, setNumOfConditions] = useState(1);
+  const { conditions } = useConditionStore(['conditions']);
+  const [conditionsState, setConditionsState] = useState(conditions);
+  useEffect(() => {
+    setConditionsState(conditions);
+  }, [conditions]);
 
-  const subscriptionData = {
-    mint: 'So11111111111111111111111111111111111111112',
-    amount: 30,
-    name: 'Alert when Wrapped Solana Drops Under 30 USDC',
-  };
+  console.log('conditions', conditionsState);
 
-  // const createSubscription = () => {
-  //   fetch('http://localhost:4000/api/createCoinSubscriptionWebSocket', {
-  //     method: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //     body: JSON.stringify(subscriptionData),
-  //   })
-  //     .then(response => {
-  //       if (!response.ok) {
-  //         throw new Error(`Server responded with ${response.status}`);
-  //       }
-  //       return response.text();
-  //     })
-  //     .then(text => {
-  //       try {
-  //         return JSON.parse(text);
-  //       } catch {
-  //         throw new Error('Received non-JSON response:\n' + text);
-  //       }
-  //     })
-  //     .then(data => {
-  //       // Handle the parsed JSON data here...
-  //     })
-  //     .catch(error => {
-  //       console.error('There was an error fetching the API:', error);
-  //     });
-  // };
-
-  // const createSubscription = () => {
-  //   const data = {
-  //     mint: 'So11111111111111111111111111111111111111112',
-  //     amount: 30,
-  //     name: 'Alert when Wrapped Solana Drops Under 30 USDC',
-  //   };
-
-  //   fetch('/api/subscribeToTokenPrice', {
-  //     method: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //     },
-  //     body: JSON.stringify(data),
-  //   })
-  //     .then(response => response.json())
-  //     .then(data => console.log(data))
-  //     .catch(error => console.error('Error:', error));
-  // };
-  const createSubscription = async () => {
-    getTokenPrice('DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263');
-  };
+  // TODO: add condition to database
 
   return (
     <>
@@ -201,7 +138,7 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose }) {
                 'linear(to-b, orange.100, purple.300)',
               ]}
               onClick={() => {
-                // createSubscription();
+                //  save to my database here api/createAlert
               }}
             >
               Create

@@ -68,25 +68,6 @@ export const Header: FC = () => {
         redirect: false,
         signature: serializedSignature,
       });
-
-      // await supabaseAuth
-      //   .createUserInDatabase(publicKey?.toBase58())
-      //   .then(res => {
-      //     console.log('res', res);
-      //   })
-      //   .catch(err => {
-      //     console.log('err', err, signinMessage);
-      //   });
-      // supabaseAuth
-      //   .createUser({
-      //     public_key: publicKey?.toBase58(),
-      //   })
-      //   .then(res => {
-      //     console.log(res);
-      //   })
-      //   .catch(err => {
-      //     console.log(err);
-      //   });
     } catch (error) {
       console.error(error);
     }
@@ -114,42 +95,26 @@ export const Header: FC = () => {
 
       {!connected ? <WalletMultiButton /> : null}
 
-      {/* {connected && (
-        <Menu>
-          <MenuButton>
-            <Text>
-              {publicKey?.toString().slice(0, 6) +
-                '...' +
-                publicKey?.toString().slice(-4)}
-            </Text>
-          </MenuButton>
-          <MenuList>
-            <MenuItem color="red.400" onClick={disconnect}>
-              <FiLogOut />
-              <Text>Logout</Text>
-            </MenuItem>
-          </MenuList>
-        </Menu>
-      )} */}
-
-      {session?.user && (
+      {connected && session?.user && (
         <Flex>
           <Menu>
             <Stack direction="row" spacing={4}>
               <MenuButton bg="purple.400" rounded={'md'} py="2" px="2">
-                {session.user.image && (
-                  <Image
-                    src={session.user.image}
-                    alt={session.user.name}
-                    boxSize="40px"
-                    borderRadius="full"
-                  />
-                )}
-                <Text>
-                  {publicKey?.toString().slice(0, 6) +
-                    '...' +
-                    publicKey?.toString().slice(-4)}
-                </Text>
+                <Stack direction="row" spacing={2} align="center">
+                  {session.user.image && (
+                    <Image
+                      src={session.user.image}
+                      alt={session.user.name}
+                      boxSize="40px"
+                      borderRadius="full"
+                    />
+                  )}
+                  <Text>
+                    {publicKey?.toString().slice(0, 6) +
+                      '...' +
+                      publicKey?.toString().slice(-4)}
+                  </Text>
+                </Stack>
               </MenuButton>
             </Stack>
             <MenuList>

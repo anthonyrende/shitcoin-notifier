@@ -16,6 +16,7 @@ import {
   useColorModeValue,
   Tooltip,
   Text,
+  useToast,
 } from '@chakra-ui/react';
 import { ReactNode } from 'react';
 import { BsPerson } from 'react-icons/bs';
@@ -34,6 +35,7 @@ import { fetchTokenMetadata } from '@/utils/fetchTokenMetaData';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PriceDisplay } from '../PriceDisplay';
 import { PublicKey } from '@solana/web3.js';
+
 interface StatsCardProps {
   title: string;
   stat: string | JSX.Element;
@@ -87,6 +89,8 @@ export default function CoinStats() {
       'addToWatchList',
       'updateTokenStats',
     ]);
+
+  const toast = useToast();
 
   useEffect(() => {
     if (coins && coins.length > 0) {
@@ -158,13 +162,15 @@ export default function CoinStats() {
     coin: Coin,
     passedPublicKey: PublicKey,
   ) => {
+    const publicKeyString = passedPublicKey.toBase58();
+
     try {
       const response = await fetch('/api/watchlist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ coin, passedPublicKey }),
+        body: JSON.stringify({ coin, publicKeyString }),
       });
 
       if (response.ok) {
@@ -174,6 +180,13 @@ export default function CoinStats() {
       } else {
         const { error } = await response.json();
         console.error('Failed to add coin to watchlist:', error);
+        toast({
+          title: 'Failed to add coin to watchlist',
+          description: error,
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+        });
       }
     } catch (err) {
       console.error('Error while calling the API:', err);
@@ -232,7 +245,20 @@ export default function CoinStats() {
               />
 
               <Button
-                onClick={() => handleAddToWatchList(coin, publicKey.toBase58())}
+                onClick={() => {
+                  if (!publicKey) {
+                    toast({
+                      title: 'No wallet connected',
+                      description:
+                        'Please connect your wallet to add this coin to your watchlist',
+                      status: 'error',
+                      duration: 5000,
+                      isClosable: true,
+                    });
+                  } else {
+                    handleAddToWatchList(coin, publicKey);
+                  }
+                }}
                 colorScheme="purple"
                 mb={{ base: 7, md: 0 }}
                 w="200px"

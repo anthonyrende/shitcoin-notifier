@@ -29,10 +29,13 @@ import { BsPencil, BsPencilSquare } from 'react-icons/bs';
 import { FiAlertCircle, FiDelete } from 'react-icons/fi';
 import CreateAlertModal from '../Modals/CreateAlertModal';
 import { PriceDisplay } from '../PriceDisplay';
+import { PublicKey } from '@solana/web3.js';
+import { useWallet } from '@solana/wallet-adapter-react';
 
 const WatchListTable = () => {
-  const [watchListCoins, setWatchListCoins] = useState();
-  const [coinState, setCoinState] = useState();
+  const [watchListCoins, setWatchListCoins] = useState<Coin[]>();
+  const [coinState, setCoinState] = useState<Coin[]>();
+  const { publicKey } = useWallet();
   const { coins, addToCoins, clearState, watchList, removeFromWatchList } =
     useCoinStore([
       'coins',
@@ -60,6 +63,34 @@ const WatchListTable = () => {
   const gray180 = useColorModeValue('gray.180', 'gray.700');
   const gray200 = useColorModeValue('gray.200', 'gray.600');
   const gray800 = useColorModeValue('gray.300', 'gray.500');
+
+  const handleRemoveFromWatchList = async (
+    coin: Coin,
+    passedPublicKey: PublicKey,
+  ) => {
+    console.log('passedPublicKey: ', passedPublicKey);
+    const publicKeyString = passedPublicKey.toBase58();
+    try {
+      const response = await fetch('/api/watchlist', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ coin, publicKeyString }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Coin removed from watchlist:', data);
+        removeFromWatchList(coin);
+      } else {
+        const { error } = await response.json();
+        console.error('Failed to remove coin from watchlist:', error);
+      }
+    } catch (err) {
+      console.error('Error while calling the API:', err);
+    }
+  };
   return (
     <Stack w="full" bg="purple.800">
       <TableContainer
@@ -92,7 +123,7 @@ const WatchListTable = () => {
           </Thead>
 
           <Tbody id="tbody">
-            {watchListCoins?.map((coin, index) => (
+            {watchListCoins?.map((coin: Coin, index: number) => (
               <Tr
                 key={coin.mint}
                 bg={bg}
@@ -273,7 +304,7 @@ const WatchListTable = () => {
                           }}
                           onClick={() => {
                             //TODO: Modal to confirm deletion
-                            removeFromWatchList(coin);
+                            handleRemoveFromWatchList(coin, publicKey);
                           }}
                         >
                           <FiDelete size={20} />

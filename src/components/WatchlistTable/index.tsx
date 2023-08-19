@@ -21,6 +21,7 @@ import {
   Image,
   Text,
   useDisclosure,
+  useToast,
 } from '@chakra-ui/react';
 // import { Box } from "framer-motion"
 import Link from 'next/link';
@@ -51,6 +52,8 @@ const WatchListTable = () => {
   useEffect(() => {
     setCoinState(coins);
   }, [coins]);
+
+  const toast = useToast();
 
   const {
     isOpen: isCreateAlertOpen,
@@ -92,17 +95,17 @@ const WatchListTable = () => {
     }
   };
   return (
-    <Stack w="full" bg="purple.800">
+    <Stack w="full" bg="purple.800" rounded={'lg'}>
       <TableContainer
         display={{
           base: 'none',
           lg: 'block',
         }}
         bg="purple.400"
+        rounded={'lg'}
       >
         <Table
           variant="unstyled"
-          //   bg={gray50}
           style={{
             borderTop: '15px solid transparent',
             borderCollapse: 'collapse',
@@ -131,7 +134,7 @@ const WatchListTable = () => {
                 boxShadow={'md'}
                 borderBottomWidth="10px"
                 borderBottomStyle="solid"
-                borderBottomColor={gray180}
+                borderBottomColor="purple.400"
               >
                 <Td fontSize={'sm'}>
                   <Flex alignItems="center" gap="1">
@@ -304,6 +307,16 @@ const WatchListTable = () => {
                           }}
                           onClick={() => {
                             //TODO: Modal to confirm deletion
+                            if (!publicKey) {
+                              toast({
+                                title: 'Error',
+                                description: 'Please connect wallet',
+                                status: 'error',
+                                duration: 5000,
+                                isClosable: true,
+                              });
+                              return;
+                            }
                             handleRemoveFromWatchList(coin, publicKey);
                           }}
                         >

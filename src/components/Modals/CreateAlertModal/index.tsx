@@ -26,6 +26,8 @@ import WebSocketComponent from '@/components/WebSocketComponent';
 import { getTokenPrice } from '@/utils/getTokenPriceRaydium';
 import { FiDelete } from 'react-icons/fi';
 import { useConditionStore } from '@/stores/useConditionStore';
+import { useWallet } from '@solana/wallet-adapter-react';
+import { PublicKey } from '@solana/web3.js';
 
 function describeCondition(operator, value, type) {
   let typeDescription = '';
@@ -65,7 +67,8 @@ const ConditionMenu = ({ coin }) => {
   useEffect(() => {
     setConditionsState(coinConditions);
   }, [conditions]);
-  console.log('conditionsState', relevantCondition);
+  // console.log('conditionsState', relevantCondition);
+
   return (
     <div>
       {conditionsState.map((condition, index) => (
@@ -143,9 +146,48 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
     setConditionsState(conditions);
   }, [conditions]);
 
-  // console.log('conditions', conditionsState);
+  console.log('conditions', conditionsState, coin.mint);
 
-  // TODO: add condition to database
+  const { publicKey } = useWallet();
+
+  const alertConditions = conditionsState.find(
+    condition => condition.mint === coin.mint,
+  );
+
+  console.log('alertConditions', alertConditions);
+
+  const handleCreatePriceAlert = async (
+    mint: string,
+    conditions: any,
+    passedPublicKey: PublicKey,
+  ) => {
+    const publicKeyString = passedPublicKey.toBase58();
+    const requestBody = {
+      mint: mint,
+      conditions: conditions,
+      publicKeyString,
+    };
+
+    try {
+      const response = await fetch('/api/alerts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        onClose();
+      } else {
+        const { error } = await response.json();
+        console.error('Failed to save to database:', error);
+      }
+    } catch (err) {
+      console.error('Error while calling the API:', err);
+    }
+  };
 
   return (
     <>
@@ -181,7 +223,11 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
                 'linear(to-b, orange.100, purple.300)',
               ]}
               onClick={() => {
-                //  save to my database here api/createAlert
+                handleCreatePriceAlert(
+                  alertConditions.mint,
+                  alertConditions.conditions,
+                  publicKey,
+                );
               }}
             >
               Create

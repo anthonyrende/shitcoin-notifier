@@ -44,7 +44,9 @@ const Home = () => {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const wallet = useAnchorWallet();
   const { connection } = useConnection();
+  const { connected } = useWallet();
   const { publicKey, disconnect, disconnecting, connecting } = useWallet();
+
   const coinsFromWallet = useFetchCoinsFromWallet(
     publicKey,
     connection,
@@ -54,13 +56,14 @@ const Home = () => {
   useEffect(() => {
     setCoinstate(coins);
   }, [coins]);
+  console.log('coinstate');
 
   useEffect(() => {
-    if (coinsFromWallet && coinsFromWallet.length > 0) {
+    if (connected && coinsFromWallet && coinsFromWallet.length > 0) {
       console.log('coinsFromWallet here');
       coinsFromWallet.forEach(coin => {
         // Only add the coin if it's not already in the global state
-        if (coinstate && !coinstate.some(c => c.mint === coin.mint)) {
+        if (!coins.find(coinInState => coinInState.mint === coin.mint)) {
           addToCoins(coin);
         }
       });

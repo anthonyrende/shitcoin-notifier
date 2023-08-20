@@ -23,7 +23,7 @@ export default async function handler(
     .from('watchlist')
     .select('coins')
     .eq('user_id', user.id)
-    .single();
+    .maybeSingle();
 
   if (fetchError) {
     return res.status(400).json({ error: 'Error fetching watchlist.' });
@@ -38,14 +38,15 @@ export default async function handler(
     ) {
       return res.status(409).json({ error: 'Coin already in watchlist.' });
     }
-
     // Convert existingWatchlist.coins into an array, even if it's just a single coin object
-    const existingCoinsMints = Array.isArray(existingWatchlist.coins)
-      ? existingWatchlist.coins.map(coin => coin.mint)
-      : [existingWatchlist.coins.mint];
+    const existingCoinsMints = Array.isArray(existingWatchlist?.coins)
+      ? existingWatchlist?.coins.map(coin => coin.mint)
+      : [existingWatchlist?.coins.mint];
 
-    // Add the new coin to the array
-    const newCoins = [...existingCoinsMints, req.body.coin.mint];
+    // Add the new coin to the array if it exists, otherwise create a new array
+    const newCoins = existingCoinsMints
+      ? [...existingCoinsMints, req.body.coin.mint]
+      : [req.body.coin.mint];
 
     // Update in the database as an array of objects
     const { error: updateError } = await supabase.from('watchlist').upsert({

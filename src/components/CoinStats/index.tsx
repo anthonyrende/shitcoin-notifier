@@ -35,6 +35,8 @@ import { fetchTokenMetadata } from '@/utils/fetchTokenMetaData';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PriceDisplay } from '../PriceDisplay';
 import { PublicKey } from '@solana/web3.js';
+import useFetchCoinInfo from '@/hooks/useFetchCoinInfo';
+import { validateAndAddCoins } from '@/utils/validateCoins';
 
 interface StatsCardProps {
   title: string;
@@ -82,15 +84,22 @@ export default function CoinStats() {
   const { publicKey, disconnect, disconnecting } = useWallet();
   const [tokenStats, setTokenStats] = useState<any[]>([]);
   const [coinState, setCoinState] = useState<Coin[]>([]);
-  const { coins, updateCoinMetaData, addToWatchList, updateTokenStats } =
-    useCoinStore([
-      'coins',
-      'updateCoinMetaData',
-      'addToWatchList',
-      'updateTokenStats',
-    ]);
 
+  const {
+    coins,
+    updateCoinMetaData,
+    addToWatchList,
+    removeFromCoins,
+    updateTokenStats,
+  } = useCoinStore([
+    'coins',
+    'updateCoinMetaData',
+    'addToWatchList',
+    'removeFromCoins',
+    'updateTokenStats',
+  ]);
   const toast = useToast();
+  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
   useEffect(() => {
     if (coins && coins.length > 0) {
@@ -98,32 +107,55 @@ export default function CoinStats() {
     }
   }, [coins, disconnecting]);
 
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-
   const fetchCoinMetadata = useCallback(async () => {
-    try {
-      const coinsData = [];
-      const metaData = [];
-      for (let i = 0; i < coinState.length; i++) {
-        await sleep(200 * i);
-        const coin = coinState[i];
-        const mintAddress = coin.mint;
-        const metadata = await fetchTokenMetadata({ mintAddress });
-        metaData.push(metadata);
-        coinsData.push({ ...coin, metadata });
-      }
+    const coinsData = [];
+    const metaData = [];
 
-      coinsData.forEach((coin, index) => {
-        updateCoinMetaData(coin);
-      });
+    // Expected length should check if greater than 32 and less than 44 by regex
+    const validMintAddressPattern = /^[a-zA-Z0-9]{32,44}$/;
+
+    try {
+      await Promise.all(
+        coinState.map(async (coin, i) => {
+          await sleep(200 * i);
+          const mintAddress = coin.mint;
+
+          // Check if mintAddress is valid. This is a basic check, adjust as necessary.
+          if (
+            !mintAddress ||
+            typeof mintAddress !== 'string' ||
+            !validMintAddressPattern.test(mintAddress)
+          ) {
+            console.error('Invalid mint address:', mintAddress);
+
+            return;
+          }
+
+          try {
+            const metadata = await fetchTokenMetadata({ mintAddress });
+            metaData.push(metadata);
+            coinsData.push({ ...coin, metadata });
+          } catch (error) {
+            console.error(
+              'Error fetching metadata for mint address:',
+              mintAddress,
+              error,
+            );
+          }
+        }),
+      );
     } catch (error) {
       console.error('Error fetching coin metadata:', error);
     }
+
+    coinsData.forEach((coin, index) => {
+      updateCoinMetaData(coin);
+    });
   }, [coinState]);
 
   useEffect(() => {
     fetchCoinMetadata();
-  }, [fetchCoinMetadata, coinState]);
+  }, [fetchCoinMetadata]);
 
   useEffect(() => {
     if (coinState && coinState.length > 0) {
@@ -135,6 +167,7 @@ export default function CoinStats() {
           const allStats = await Promise.all(statsPromises);
           allStats.forEach((stats, index) => {
             const mint = coinState[index].mint;
+
             updateTokenStats(mint, stats);
           });
           setTokenStats(allStats);
@@ -151,12 +184,8 @@ export default function CoinStats() {
     coins: coinState,
   });
 
-  useEffect(() => {
-    if (loading || error) return; // Handle loading or error if needed
-  }, [coinPrices, loading, error]);
-
-  // console.log('coinsPriceeeeeeee: ', coinPrices);
-  console.log('coinState', coinState);
+  console.log('coinsPriceeeeeeee: ', coinPrices);
+  // console.log('coinState', coinState);
 
   const handleAddToWatchList = async (
     coin: Coin,

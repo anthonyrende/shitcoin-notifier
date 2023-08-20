@@ -21,11 +21,10 @@ import {
   Image,
   Text,
   useDisclosure,
-  useToast,
 } from '@chakra-ui/react';
 // import { Box } from "framer-motion"
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BsPencil, BsPencilSquare } from 'react-icons/bs';
 import { FiAlertCircle, FiDelete } from 'react-icons/fi';
 import CreateAlertModal from '../Modals/CreateAlertModal';
@@ -53,14 +52,18 @@ const WatchListTable = () => {
     setCoinState(coins);
   }, [coins]);
 
-  const toast = useToast();
-
   const {
     isOpen: isCreateAlertOpen,
     onOpen: onCreateAlertOpen,
     onClose: onCreateAlertClose,
   } = useDisclosure();
 
+  const currentCoinState = useMemo(() => {
+    return (
+      coinState?.length > 1 && coinState?.find(c => c.mint === coins?.mint)
+    );
+  }, [coinState, coins.mint]);
+  const [openedModalCoinMint, setOpenedModalCoinMint] = useState(null);
   const gray50 = useColorModeValue('gray.50', 'gray.700');
   const bg = useColorModeValue('purple.700', 'gray.800');
   const gray180 = useColorModeValue('gray.180', 'gray.700');
@@ -134,7 +137,7 @@ const WatchListTable = () => {
                 boxShadow={'md'}
                 borderBottomWidth="10px"
                 borderBottomStyle="solid"
-                borderBottomColor="purple.400"
+                // borderBottomColor={}
               >
                 <Td fontSize={'sm'}>
                   <Flex alignItems="center" gap="1">
@@ -145,7 +148,7 @@ const WatchListTable = () => {
                       h={9}
                       mr={2}
                     />
-                    {coin.metaData.name}
+                    {coin?.metaData?.name}
                   </Flex>
                 </Td>
                 <Td
@@ -170,14 +173,8 @@ const WatchListTable = () => {
                 >
                   {coinState && (
                     <PriceDisplay
-                      price={
-                        coinState.find(c => c.mint === coin.mint)?.priceData
-                          ?.price
-                      }
-                      decimals={
-                        coinState.find(c => c.mint === coin.mint)?.statsData[0]
-                          ?.decimals
-                      }
+                      price={currentCoinState?.statsData[0]?.price}
+                      decimals={currentCoinState?.statsData[0]?.decimals}
                     />
                   )}
                 </Td>
@@ -220,7 +217,7 @@ const WatchListTable = () => {
                                 variant={'outline'}
                                 size={'sm'}
                                 onClick={() => {
-                                  onCreateAlertOpen();
+                                  setOpenedModalCoinMint(coin.mint);
                                 }}
                                 _hover={{
                                   color: 'purple.400',
@@ -230,11 +227,14 @@ const WatchListTable = () => {
                                 Create Price Alert
                               </Button>
                             </Tooltip>
-                            <CreateAlertModal
-                              isOpen={isCreateAlertOpen}
-                              onClose={onCreateAlertClose}
-                              onOpen={onCreateAlertOpen}
-                            />
+                            {coin.mint === openedModalCoinMint && (
+                              <CreateAlertModal
+                                isOpen={!!openedModalCoinMint}
+                                onClose={() => setOpenedModalCoinMint(null)}
+                                onOpen={() => setOpenedModalCoinMint(coin.mint)}
+                                coin={coin}
+                              />
+                            )}
                           </>
                         )}
                       </Flex>
@@ -307,16 +307,6 @@ const WatchListTable = () => {
                           }}
                           onClick={() => {
                             //TODO: Modal to confirm deletion
-                            if (!publicKey) {
-                              toast({
-                                title: 'Error',
-                                description: 'Please connect wallet',
-                                status: 'error',
-                                duration: 5000,
-                                isClosable: true,
-                              });
-                              return;
-                            }
                             handleRemoveFromWatchList(coin, publicKey);
                           }}
                         >

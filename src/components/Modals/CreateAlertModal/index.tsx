@@ -67,7 +67,6 @@ const ConditionMenu = ({ coin }) => {
   useEffect(() => {
     setConditionsState(coinConditions);
   }, [conditions]);
-  // console.log('conditionsState', relevantCondition);
 
   return (
     <div>
@@ -121,7 +120,7 @@ const ConditionMenu = ({ coin }) => {
         colorScheme="purple"
         onClick={() => addCondition(coin.mint)}
       >
-        Or ...
+        {conditions.length > 0 ? 'Or ...' : 'Add'}
       </Button>
       {conditionsState.map((condition, index) => (
         <Stack key={index} mt="4">
@@ -146,7 +145,7 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
     setConditionsState(conditions);
   }, [conditions]);
 
-  console.log('conditions', conditionsState, coin.mint);
+  // console.log('conditions', conditionsState, coin.mint);
 
   const { publicKey } = useWallet();
 

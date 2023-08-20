@@ -1,3 +1,5 @@
+import { useCoinStore } from '@/stores/useCoinStore';
+import { Coin } from '@/types/types';
 import {
   Modal,
   ModalOverlay,
@@ -9,8 +11,20 @@ import {
   Button,
   Input,
 } from '@chakra-ui/react';
+import { useEffect, useState } from 'react';
 
 export default function AddYourCoin({ isOpen, onOpen, onClose }) {
+  const [value, setValue] = useState('');
+  const [coin, setCoin] = useState<Coin | null>(null);
+  const { coins, addToCoins, addToWatchList } = useCoinStore([
+    'coins',
+    'addToCoins',
+    'addToWatchList',
+  ]);
+  useEffect(() => {
+    setCoin(coins);
+  }, [coins]);
+  // console.log('coin', coin);
   return (
     <>
       <Modal
@@ -32,7 +46,14 @@ export default function AddYourCoin({ isOpen, onOpen, onClose }) {
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Input placeholder="Enter Address" size="lg" variant="filled" />
+            <Input
+              placeholder="Enter Address"
+              size="lg"
+              variant="filled"
+              onChange={e => {
+                setValue(e.target.value);
+              }}
+            />
           </ModalBody>
           <ModalFooter>
             <Button
@@ -43,7 +64,9 @@ export default function AddYourCoin({ isOpen, onOpen, onClose }) {
                 'linear(to-b, orange.100, purple.300)',
               ]}
               onClick={() => {
-                // TODO: Add coin
+                // TODO: Add validation
+                addToCoins({ mint: value });
+                onClose();
               }}
             >
               Add Coin

@@ -13,6 +13,7 @@ import {
   Select,
   HStack,
   Text,
+  Stack,
 } from '@chakra-ui/react';
 
 const {
@@ -26,7 +27,26 @@ import { getTokenPrice } from '@/utils/getTokenPriceRaydium';
 import { FiDelete } from 'react-icons/fi';
 import { useConditionStore } from '@/stores/useConditionStore';
 
-const ConditionMenu = () => {
+function describeCondition(operator, value, type) {
+  let typeDescription = '';
+
+  // Add specific descriptions based on the type
+  switch (type) {
+    case '%':
+      typeDescription = `the current price by ${value}%`;
+      break;
+    case 'exact':
+      typeDescription = `the exact price of ${value}`;
+      break;
+    default:
+      typeDescription = `the current price`;
+      break;
+  }
+
+  return `When the value is ${operator} ${typeDescription}`;
+}
+
+const ConditionMenu = ({ coin }) => {
   const { conditions, addCondition, removeCondition, updateCondition } =
     useConditionStore([
       'conditions',
@@ -35,12 +55,17 @@ const ConditionMenu = () => {
       'updateCondition',
     ]);
 
-  const [conditionsState, setConditionsState] = useState(conditions);
+  const relevantCondition = conditions.find(
+    condition => condition.mint === coin.mint,
+  );
+  const coinConditions = relevantCondition ? relevantCondition.conditions : [];
+
+  const [conditionsState, setConditionsState] = useState(coinConditions);
 
   useEffect(() => {
-    setConditionsState(conditions);
+    setConditionsState(coinConditions);
   }, [conditions]);
-
+  console.log('conditionsState', relevantCondition);
   return (
     <div>
       {conditionsState.map((condition, index) => (
@@ -48,7 +73,9 @@ const ConditionMenu = () => {
           <HStack spacing={4} py="2">
             <Select
               value={condition.operator}
-              onChange={e => updateCondition(index, 'operator', e.target.value)}
+              onChange={e =>
+                updateCondition(coin.mint, index, 'operator', e.target.value)
+              }
               size="lg"
               variant="filled"
               w="32"
@@ -59,14 +86,18 @@ const ConditionMenu = () => {
             </Select>
             <Input
               value={condition.value}
-              onChange={e => updateCondition(index, 'value', e.target.value)}
+              onChange={e =>
+                updateCondition(coin.mint, index, 'value', e.target.value)
+              }
               placeholder="Enter Value"
               size="lg"
               variant="filled"
             />
             <Select
               value={condition.type}
-              onChange={e => updateCondition(index, 'type', e.target.value)}
+              onChange={e =>
+                updateCondition(coin.mint, index, 'type', e.target.value)
+              }
               placeholder="%"
               size="lg"
               variant="filled"
@@ -75,7 +106,7 @@ const ConditionMenu = () => {
               <option value="%">%</option>
               <option value="exact">Exact Price</option>
             </Select>
-            <button onClick={() => removeCondition(index)}>
+            <button onClick={() => removeCondition(coin.mint, index)}>
               <FiDelete />
             </button>
           </HStack>
@@ -85,22 +116,34 @@ const ConditionMenu = () => {
         mt={4}
         variant="solid"
         colorScheme="purple"
-        onClick={() => addCondition()}
+        onClick={() => addCondition(coin.mint)}
       >
         Or ...
       </Button>
+      {conditionsState.map((condition, index) => (
+        <Stack key={index} mt="4">
+          <Text>
+            {index === 0 ? '' : 'Or'}{' '}
+            {describeCondition(
+              condition.operator,
+              condition.value,
+              condition.type,
+            )}
+          </Text>
+        </Stack>
+      ))}
     </div>
   );
 };
 
-export default function CreateAlertModal({ isOpen, onOpen, onClose }) {
+export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
   const { conditions } = useConditionStore(['conditions']);
   const [conditionsState, setConditionsState] = useState(conditions);
   useEffect(() => {
     setConditionsState(conditions);
   }, [conditions]);
 
-  console.log('conditions', conditionsState);
+  // console.log('conditions', conditionsState);
 
   // TODO: add condition to database
 
@@ -127,7 +170,7 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose }) {
           <ModalCloseButton />
           <ModalBody>
             <Text color={'gray.700'}>Set condition </Text>
-            <ConditionMenu />
+            <ConditionMenu coin={coin} />
           </ModalBody>
           <ModalFooter>
             <Button

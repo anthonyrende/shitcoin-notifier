@@ -5,7 +5,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  const { mint, conditions, publicKeyString: publicKey } = req.body;
+  const { mint, conditions, publicKeyString: publicKey, coinPrice } = req.body;
 
   // Find the user_id using the public_key
   const { data: user, error: userError } = await supabase
@@ -24,9 +24,9 @@ export default async function handler(
     .select('*')
     .eq('id', user.id)
     .eq('mint', mint)
-    .maybeSingle();
+    .single();
 
-  console.log('err exisiting', existingAlert);
+  console.log('err exisiting', existingAlert, fetchError);
 
   if (fetchError) {
     return res.status(400).json({ error: 'Error fetching alert.' });
@@ -39,6 +39,7 @@ export default async function handler(
         .from('price_alert')
         .update({
           conditions: conditions,
+          set_coin_price: coinPrice,
         })
         .eq('id', user.id)
         .eq('mint', mint);
@@ -58,8 +59,9 @@ export default async function handler(
           id: user.id,
           mint: mint,
           conditions: conditions,
+          set_coin_price: coinPrice,
         });
-
+      console.log('insert err', insertError);
       if (insertError) {
         return res.status(400).json({ error: 'Error creating alert.' });
       }

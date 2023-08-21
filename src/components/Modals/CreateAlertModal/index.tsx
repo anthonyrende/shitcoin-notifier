@@ -28,6 +28,7 @@ import { FiDelete } from 'react-icons/fi';
 import { useConditionStore } from '@/stores/useConditionStore';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
+import { fetchCoinPrice } from '@/utils/fetchCoinPrice';
 
 function describeCondition(operator, value, type) {
   let typeDescription = '';
@@ -145,26 +146,28 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
     setConditionsState(conditions);
   }, [conditions]);
 
-  // console.log('conditions', conditionsState, coin.mint);
-
   const { publicKey } = useWallet();
 
   const alertConditions = conditionsState.find(
     condition => condition.mint === coin.mint,
   );
 
-  console.log('alertConditions', alertConditions);
+  // console.log('alertConditions', alertConditions);
 
   const handleCreatePriceAlert = async (
     mint: string,
     conditions: any,
     passedPublicKey: PublicKey,
+    coinPrice: number,
   ) => {
     const publicKeyString = passedPublicKey.toBase58();
-    const requestBody = {
+    const price = await coinPrice;
+
+    const requestBody = await {
       mint: mint,
       conditions: conditions,
       publicKeyString,
+      price,
     };
 
     try {
@@ -186,6 +189,15 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
     } catch (err) {
       console.error('Error while calling the API:', err);
     }
+  };
+
+  const getTokenPrice = (coin, price, decimals) => {
+    if (coin?.statsData[5].latest_price > 0) {
+      return coin?.statsData[5].latest_price;
+    }
+    const coinPrice = fetchCoinPrice(price, decimals).then(res => res);
+
+    return coinPrice;
   };
 
   return (
@@ -222,11 +234,21 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
                 'linear(to-b, orange.100, purple.300)',
               ]}
               onClick={() => {
-                handleCreatePriceAlert(
-                  alertConditions.mint,
-                  alertConditions.conditions,
-                  publicKey,
-                );
+                if (!publicKey) {
+                  alert('Please connect your wallet');
+                }
+                alertConditions &&
+                  publicKey &&
+                  handleCreatePriceAlert(
+                    alertConditions.mint,
+                    alertConditions.conditions,
+                    publicKey,
+                    getTokenPrice(
+                      coin,
+                      coin?.priceData?.price,
+                      coin?.statsData[5]?.decimals,
+                    ),
+                  );
               }}
             >
               Create

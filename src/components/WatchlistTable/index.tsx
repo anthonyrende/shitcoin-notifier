@@ -24,18 +24,25 @@ import {
 } from '@chakra-ui/react';
 // import { Box } from "framer-motion"
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { BsPencil, BsPencilSquare } from 'react-icons/bs';
 import { FiAlertCircle, FiDelete } from 'react-icons/fi';
 import CreateAlertModal from '../Modals/CreateAlertModal';
 import { PriceDisplay } from '../PriceDisplay';
 import { PublicKey } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
+import { useConditionStore } from '@/stores/useConditionStore';
 
 const WatchListTable = () => {
   const [watchListCoins, setWatchListCoins] = useState<Coin[]>();
-  const [coinState, setCoinState] = useState<Coin[]>();
+  const [coinState, setCoinState] = useState<Coin[]>([]);
+  const [conditionsState, setConditionsState] = useState<[]>([]);
   const { publicKey } = useWallet();
+  const { conditions } = useConditionStore(['conditions']);
+
+  useEffect(() => {
+    setConditionsState(conditions);
+  }, [conditions]);
   const { coins, addToCoins, clearState, watchList, removeFromWatchList } =
     useCoinStore([
       'coins',
@@ -58,11 +65,20 @@ const WatchListTable = () => {
     onClose: onCreateAlertClose,
   } = useDisclosure();
 
-  const currentCoinState = useMemo(() => {
-    return (
-      coinState?.length > 1 && coinState?.find(c => c.mint === coins?.mint)
-    );
-  }, [coinState, coins.mint]);
+  console.log('conditionsState', conditionsState);
+  const currentConditionState = useCallback(
+    coin => {
+      return conditionsState?.find(c => c.mint === coin?.mint);
+    },
+    [conditionsState],
+  );
+
+  const currentCoinState = useCallback(
+    coin => {
+      return coinState?.find(c => c.mint === coin?.mint);
+    },
+    [coinState],
+  );
   const [openedModalCoinMint, setOpenedModalCoinMint] = useState(null);
   const gray50 = useColorModeValue('gray.50', 'gray.700');
   const bg = useColorModeValue('purple.700', 'gray.800');
@@ -74,7 +90,6 @@ const WatchListTable = () => {
     coin: Coin,
     passedPublicKey: PublicKey,
   ) => {
-    console.log('passedPublicKey: ', passedPublicKey);
     const publicKeyString = passedPublicKey.toBase58();
     try {
       const response = await fetch('/api/watchlist', {
@@ -160,8 +175,7 @@ const WatchListTable = () => {
                   w={{ base: '24', md: '52' }}
                 >
                   {coinState &&
-                    coinState.find(c => c.mint === coin.mint)?.statsData[0]
-                      ?.priceChange}
+                    currentCoinState(coin)?.statsData[0]?.priceChange}
                 </Td>
                 <Td
                   fontSize={'sm'}
@@ -173,8 +187,8 @@ const WatchListTable = () => {
                 >
                   {coinState && (
                     <PriceDisplay
-                      price={currentCoinState?.statsData[0]?.price}
-                      decimals={currentCoinState?.statsData[0]?.decimals}
+                      price={currentCoinState(coin)?.priceData?.price}
+                      decimals={currentCoinState(coin)?.statsData[5]?.decimals}
                     />
                   )}
                 </Td>
@@ -188,7 +202,8 @@ const WatchListTable = () => {
                         align={'center'}
                         margin={'auto'}
                       >
-                        {coin.watching ? (
+                        {/* TODO: Change this to currentConditionState(coin)?.conditions?.length > 0  */}
+                        {coin?.watching ? (
                           <>
                             <FiAlertCircle size={20} />
                             <Text

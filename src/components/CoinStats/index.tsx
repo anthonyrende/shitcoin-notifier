@@ -184,7 +184,7 @@ export default function CoinStats() {
     coins: coinState,
   });
 
-  console.log('coinsPriceeeeeeee: ', coinPrices);
+  console.log('coinsPriceeeeeeee: ', coinPrices, coinState);
   // console.log('coinState', coinState);
 
   const handleAddToWatchList = async (
@@ -255,12 +255,7 @@ export default function CoinStats() {
               />
               <StatsCard
                 title={'Current Price'}
-                stat={
-                  <PriceDisplay
-                    price={coin?.priceData?.price}
-                    decimals={coin?.statsData && coin?.statsData[5]?.decimals}
-                  />
-                }
+                stat={<PriceDisplay price={coin?.priceData} />}
                 icon={<FiServer size={'3em'} />}
               />
               <StatsCard

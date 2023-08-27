@@ -38,6 +38,7 @@ export default async function handler(
         .update({
           conditions: conditions,
           set_coin_price: price,
+          price_hit: true,
         })
         .eq('id', user.id)
         .eq('mint', mint);
@@ -56,6 +57,7 @@ export default async function handler(
           mint: mint,
           conditions: conditions,
           set_coin_price: price,
+          price_hit: true,
         });
 
       if (insertError) {

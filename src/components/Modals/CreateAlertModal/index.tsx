@@ -14,6 +14,8 @@ import {
   HStack,
   Text,
   Stack,
+  Flex,
+  useToast,
 } from '@chakra-ui/react';
 
 const {
@@ -23,12 +25,14 @@ const {
 } = require('@hellomoon/api');
 
 import WebSocketComponent from '@/components/WebSocketComponent';
-import { getTokenPrice } from '@/utils/getTokenPriceRaydium';
 import { FiDelete } from 'react-icons/fi';
 import { useConditionStore } from '@/stores/useConditionStore';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
 import { fetchCoinPrice } from '@/utils/fetchCoinPrice';
+import useFetchCoinPrice from '@/hooks/useFetchCoinPrice';
+import { useCoinStore } from '@/stores/useCoinStore';
+import { formatPrice } from '@/utils/formatPrice';
 
 function describeCondition(operator, value, type) {
   let typeDescription = '';
@@ -141,19 +145,23 @@ const ConditionMenu = ({ coin }) => {
 
 export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
   const { conditions } = useConditionStore(['conditions']);
+  const { coins } = useCoinStore(['coins']);
   const [conditionsState, setConditionsState] = useState(conditions);
+  const [coinState, setCoinState] = useState(coins);
   useEffect(() => {
     setConditionsState(conditions);
-  }, [conditions]);
+    setCoinState(coins);
+  }, [conditions, coins]);
 
   const { publicKey } = useWallet();
 
+  const toast = useToast();
   const alertConditions = conditionsState.find(
     condition => condition.mint === coin.mint,
   );
 
   // console.log('alertConditions', alertConditions);
-
+  console.log('coinmnnn', coin);
   const handleCreatePriceAlert = async (
     mint: string,
     conditions: any,
@@ -161,13 +169,12 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
     coinPrice: number,
   ) => {
     const publicKeyString = passedPublicKey.toBase58();
-    const price = await coinPrice;
 
     const requestBody = await {
       mint: mint,
       conditions: conditions,
       publicKeyString,
-      price,
+      price: coinPrice,
     };
 
     try {
@@ -182,6 +189,13 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
       if (response.ok) {
         const data = await response.json();
         onClose();
+        toast({
+          title: `Alert created on ${coin.metaData.name}`,
+          description: 'We’ve created your alert at price $' + coinPrice,
+          status: 'success',
+          duration: 6000,
+          isClosable: true,
+        });
       } else {
         const { error } = await response.json();
         console.error('Failed to save to database:', error);
@@ -190,16 +204,6 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
       console.error('Error while calling the API:', err);
     }
   };
-
-  const getTokenPrice = (coin, price, decimals) => {
-    if (coin?.statsData[5].latest_price > 0) {
-      return coin?.statsData[5].latest_price;
-    }
-    const coinPrice = fetchCoinPrice(price, decimals).then(res => res);
-
-    return coinPrice;
-  };
-
   return (
     <>
       <Modal
@@ -222,7 +226,12 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Text color={'gray.700'}>Set condition </Text>
+            <Flex justifyContent={'space-between'}>
+              <Text color={'gray.700'}>Set condition </Text>
+              <Text color={'gray.700'}>
+                Current Price: ${formatPrice(coin.priceData)}{' '}
+              </Text>
+            </Flex>
             <ConditionMenu coin={coin} />
           </ModalBody>
           <ModalFooter>
@@ -243,11 +252,7 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
                     alertConditions.mint,
                     alertConditions.conditions,
                     publicKey,
-                    getTokenPrice(
-                      coin,
-                      coin?.priceData?.price,
-                      coin?.statsData[5]?.decimals,
-                    ),
+                    coin.priceData,
                   );
               }}
             >

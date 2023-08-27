@@ -1,74 +1,53 @@
 import { useCoinStore } from '@/stores/useCoinStore';
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import axios from 'axios';
 
 const useFetchCoinPrice = ({ coins } = {}) => {
   const [coinPrices, setCoinPrices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  console.log('coins in price', coins);
-  const prevCoinsLength = useRef<number>(coins.length); // Initialize the ref with the initial coins length
 
-  const { updateCoinPrices, removeFromCoins } = useCoinStore([
-    'updateCoinPrices',
-    'removeFromCoins',
-  ]);
+  const { updateCoinPrices } = useCoinStore(['updateCoinPrices']);
 
-  const fetchCoinPrice = useCallback(async () => {
-    if (coins.length <= prevCoinsLength.current) {
-      // No new coins have been added, so don't fetch metadata.
-      return;
-    }
-
-    // Update the ref to the new coins length
-    prevCoinsLength.current = coins.length;
-
+  const fetchTokenPrices = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    const coinsPriceData = [];
-
-    // Filter out invalid entries and extract mints directly
-    let coinMints =
-      coins === typeof 'string'
-        ? Array.from(coins)
-        : coins
-            .filter(coin => coin && typeof coin === 'object' && coin.mint)
-            .map(coin => coin.mint);
-
-    const url = 'https://rest-api.hellomoon.io/v0/token/price/batched';
-
-    const options = {
-      method: 'POST',
-      headers: {
-        accept: 'application/json',
-        'content-type': 'application/json',
-        authorization: process.env.NEXT_PUBLIC_HELLO_MOON_API_KEY,
-      },
-      body: JSON.stringify({ mints: coinMints }),
-    };
-
     try {
-      const response = await fetch(url, options);
-      const data = await response.json();
+      const { data: tokenPrices } = await axios.get(
+        'https://api.raydium.io/v2/main/price',
+      );
 
-      data.data.forEach(priceData => {
-        const mint = priceData.mints;
-        console.log('minttttt', priceData, 'MINT', mint);
-        updateCoinPrices(mint, priceData);
-      });
+      // Ensure coins is an array
+      const coinMints = typeof coins === 'string' ? [coins] : coins;
+      const coinsPriceData = coinMints
+        .map(coin => {
+          // Check if coin is an object and extract the mint property
+          const mint = typeof coin === 'object' && coin.mint ? coin.mint : coin;
 
-      coinsPriceData.push({ ...coins, priceData: data.data[0] });
+          const price = tokenPrices[mint];
+          console.log(`Price for ${mint}: $${price}`);
+          if (price) {
+            updateCoinPrices(mint, price);
+            return { mint, price };
+          } else {
+            console.warn(`Price not found for mint: ${mint}`);
+            return null;
+          }
+        })
+        .filter(Boolean); // Remove null entries
+      setCoinPrices(coinsPriceData);
     } catch (err) {
-      console.error('Error fetching coin price for:', err);
+      console.error('Error fetching token prices:', err);
+      setError(err);
     }
 
-    setCoinPrices(coinsPriceData);
     setLoading(false);
-  }, [coins]);
+  }, [coins, updateCoinPrices]);
 
   useEffect(() => {
-    fetchCoinPrice();
-  }, [coinPrices, updateCoinPrices, coins, fetchCoinPrice]);
+    fetchTokenPrices();
+  }, [coins, fetchTokenPrices]);
 
   return { coinPrices, loading, error };
 };

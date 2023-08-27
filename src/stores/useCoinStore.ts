@@ -6,6 +6,7 @@ import { extractMetadata } from '@/utils/metaDataHelper';
 
 import _ from 'lodash';
 import { createStoreWithSelectors } from './createStoreWithSelectors';
+import { getMintInfo } from '@/utils/getMintInfo';
 
 // Define the interface of the Cart state
 interface State {
@@ -39,7 +40,7 @@ const useCoinStoreBase = create(
       blockedMints: INITIAL_STATE.blockedMints,
       watchList: INITIAL_STATE.watchList,
 
-      addToCoins: (newCoin: Coin) => {
+      addToCoins: async (newCoin: Coin) => {
         const coins = get().coins;
 
         if (
@@ -50,6 +51,7 @@ const useCoinStoreBase = create(
           return;
         }
 
+        console.log('Adding coin to coins', newCoin);
         const updatedCoins = [...coins, newCoin].filter(coin => coin.mint);
         set({ coins: updatedCoins });
       },
@@ -67,6 +69,7 @@ const useCoinStoreBase = create(
         set({ watchList: updatedWatchList });
       },
       removeFromCoins: (coin: Coin) => {
+        console.log('Removing coin from coins', coin);
         set(state => ({
           coins: state.coins.filter(item => item.mint !== coin.mint),
           blockedMints: [...state.blockedMints, coin.mint],
@@ -102,7 +105,7 @@ const useCoinStoreBase = create(
         const updatedCoins = coins.map(coin =>
           coin.mint === mint ? { ...coin, priceData } : coin,
         );
-
+        console.log('updatedCoins', updatedCoins);
         if (!_.isEqual(coins, updatedCoins)) {
           set({ coins: updatedCoins });
         }

@@ -16,6 +16,8 @@ import {
   Stack,
   Flex,
   useToast,
+  Divider,
+  VStack,
 } from '@chakra-ui/react';
 
 const {
@@ -143,7 +145,53 @@ const ConditionMenu = ({ coin }) => {
   );
 };
 
-export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
+const setUserDiscordId = async (
+  publicKey: PublicKey,
+  discordId: string,
+): Promise<boolean> => {
+  if (!publicKey) {
+    return false;
+  }
+  const publicKeyString = publicKey ? publicKey?.toBase58() : '';
+  const options = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      publicKey: publicKeyString,
+      discord_user_id: discordId,
+    }),
+  };
+  const response = await fetch(`/api/discord/setDiscordId`, options);
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(
+      data.error || 'An error occurred while setting Discord ID.',
+    );
+  }
+  return true;
+};
+
+type CreateAlertModalProps = {
+  isOpen: boolean;
+  onOpen: () => void;
+  onClose: () => void;
+  coin: Coin;
+  discordUserIdState: string | null;
+  setDiscordUserIdState: (discordUserId: string) => void;
+};
+
+export default function CreateAlertModal({
+  isOpen,
+  onOpen,
+  onClose,
+  coin,
+  discordUserIdState,
+  setDiscordUserIdState,
+}: CreateAlertModalProps) {
+  const [inputDiscordId, setInputDiscordId] = useState('');
+  const [discordInputLoading, setDiscordInputLoading] = useState(false);
   const { conditions } = useConditionStore(['conditions']);
   const { coins } = useCoinStore(['coins']);
   const [conditionsState, setConditionsState] = useState(conditions);
@@ -160,8 +208,6 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
     condition => condition.mint === coin.mint,
   );
 
-  // console.log('alertConditions', alertConditions);
-  console.log('coinmnnn', coin);
   const handleCreatePriceAlert = async (
     mint: string,
     conditions: any,
@@ -204,6 +250,31 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
       console.error('Error while calling the API:', err);
     }
   };
+
+  const handleAddButtonClick = async () => {
+    setDiscordInputLoading(true);
+    if (!publicKey) {
+      return;
+    }
+    try {
+      const success = await setUserDiscordId(publicKey, inputDiscordId);
+      if (success) {
+        setDiscordUserIdState(inputDiscordId); // Update the global state only here
+        setDiscordInputLoading(false);
+        toast({
+          title: 'Discord ID set',
+          description: 'We’ve set your Discord ID to ' + inputDiscordId,
+          status: 'success',
+          duration: 6000,
+          isClosable: true,
+        });
+      }
+    } catch (error) {
+      console.error('Error setting Discord ID:', error);
+      setDiscordInputLoading(false);
+    }
+  };
+
   return (
     <>
       <Modal
@@ -226,44 +297,130 @@ export default function CreateAlertModal({ isOpen, onOpen, onClose, coin }) {
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            <Flex justifyContent={'space-between'}>
-              <Text color={'gray.700'}>Set condition </Text>
-              <Text color={'gray.700'}>
-                Current Price: ${formatPrice(coin.priceData)}{' '}
-              </Text>
-            </Flex>
-            <ConditionMenu coin={coin} />
+            {discordUserIdState && discordUserIdState.length > 1 ? (
+              <>
+                <Flex justifyContent={'space-between'}>
+                  <Text color={'gray.700'}>Set condition </Text>
+                  <Text color={'gray.700'}>
+                    Current Price: ${formatPrice(coin.priceData)}{' '}
+                  </Text>
+                </Flex>
+                <ConditionMenu coin={coin} />
+              </>
+            ) : (
+              <DiscordIdModalBody
+                discordId={inputDiscordId} // Pass the local state
+                setDiscordId={setInputDiscordId} // Pass the local state updater
+              />
+            )}
           </ModalBody>
+          <Divider />
           <ModalFooter>
-            <Button
-              variant={'solid'}
-              bgGradient={[
-                'linear(to-tr, teal.300, yellow.400)',
-                'linear(to-t, blue.200, teal.500)',
-                'linear(to-b, orange.100, purple.300)',
-              ]}
-              onClick={() => {
-                if (!publicKey) {
-                  alert('Please connect your wallet');
-                }
-                alertConditions &&
-                  publicKey &&
-                  handleCreatePriceAlert(
-                    alertConditions.mint,
-                    alertConditions.conditions,
-                    publicKey,
-                    coin.priceData,
-                  );
-              }}
+            <VStack
+              spacing={4}
+              // justifyContent={'center'}
+              // alignContent={'center'}
+              // alignItems={'center'}
+              justifyItems={'space-around'}
+              w="full"
             >
-              Create
-            </Button>
-            <Button colorScheme="purple" mr={3} onClick={onClose}>
-              Close
-            </Button>
+              <Flex flexDirection={'column'} w="50%"></Flex>
+              <Flex>
+                {discordUserIdState && discordUserIdState.length > 0 ? (
+                  <>
+                    <Button
+                      variant={'solid'}
+                      bgGradient={[
+                        'linear(to-tr, teal.300, yellow.400)',
+                        'linear(to-t, blue.200, teal.500)',
+                        'linear(to-b, orange.100, purple.300)',
+                      ]}
+                      alignSelf={'center'}
+                      justifyContent={'center'}
+                      justifySelf={'center'}
+                      onClick={() => {
+                        if (!publicKey) {
+                          alert('Please connect your wallet');
+                        }
+                        alertConditions &&
+                          publicKey &&
+                          handleCreatePriceAlert(
+                            alertConditions.mint,
+                            alertConditions.conditions,
+                            publicKey,
+                            coin.priceData,
+                          );
+                      }}
+                    >
+                      Create
+                    </Button>
+                  </>
+                ) : (
+                  <Button
+                    variant={'solid'}
+                    bgGradient={[
+                      'linear(to-tr, teal.300, yellow.400)',
+                      'linear(to-t, blue.200, teal.500)',
+                      'linear(to-b, orange.100, purple.300)',
+                    ]}
+                    alignSelf={'center'}
+                    onClick={() => {
+                      handleAddButtonClick();
+                    }}
+                    loadingText="Adding"
+                    isLoading={discordInputLoading}
+                    _loading={{
+                      bgGradient: [
+                        'linear(to-tr, teal.300, yellow.400)',
+                        'linear(to-t, blue.200, teal.500)',
+                        'linear(to-b, orange.100, purple.300)',
+                      ],
+                    }}
+                  >
+                    Add
+                  </Button>
+                )}
+                <Button colorScheme="purple" mr={3} onClick={onClose}>
+                  Close
+                </Button>
+              </Flex>
+            </VStack>
           </ModalFooter>
         </ModalContent>
       </Modal>
     </>
   );
 }
+
+type DiscordIdModalBodyProps = {
+  setDiscordId: (discordId: string) => void;
+  discordId: string;
+};
+
+const DiscordIdModalBody = ({
+  setDiscordId,
+  discordId,
+}: DiscordIdModalBodyProps) => {
+  return (
+    <Flex
+      flexDirection={'column'}
+      justifyContent={'center'}
+      alignItems={'center'}
+      w="full"
+    >
+      <Text mb="2" fontSize={'sm'}>
+        Add your discord user id to recieve notification
+      </Text>
+
+      <Input
+        placeholder="Enter Discord User ID"
+        size="md"
+        variant="filled"
+        value={discordId}
+        onChange={e => {
+          setDiscordId(e.target.value);
+        }}
+      />
+    </Flex>
+  );
+};

@@ -21,6 +21,7 @@ import {
   Image,
   Text,
   useDisclosure,
+  useToast,
 } from '@chakra-ui/react';
 // import { Box } from "framer-motion"
 import Link from 'next/link';
@@ -33,13 +34,31 @@ import { PublicKey } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useConditionStore } from '@/stores/useConditionStore';
 
+const getUserDiscordId = async (publicKey: PublicKey) => {
+  const publicKeyString = publicKey?.toBase58();
+  const options = {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ publicKey: publicKeyString }),
+  };
+  const response = await fetch(`/api/discord/getDiscordId`, options);
+  const data = await response.json();
+  return data.user.discord_user_id;
+};
+
 const WatchListTable = () => {
+  const [discordUserIdState, setDiscordUserIdState] = useState<string | null>(
+    '',
+  );
   const [watchListCoins, setWatchListCoins] = useState<Coin[]>();
   const [coinState, setCoinState] = useState<Coin[]>([]);
   const [conditionsState, setConditionsState] = useState<[]>([]);
   const { publicKey } = useWallet();
   const { conditions } = useConditionStore(['conditions']);
 
+  const toast = useToast();
   useEffect(() => {
     setConditionsState(conditions);
   }, [conditions]);
@@ -66,12 +85,6 @@ const WatchListTable = () => {
   } = useDisclosure();
 
   console.log('conditionsState', conditionsState);
-  const currentConditionState = useCallback(
-    coin => {
-      return conditionsState?.find(c => c.mint === coin?.mint);
-    },
-    [conditionsState],
-  );
 
   const currentCoinState = useCallback(
     coin => {
@@ -86,6 +99,15 @@ const WatchListTable = () => {
   const gray200 = useColorModeValue('gray.200', 'gray.600');
   const gray800 = useColorModeValue('gray.300', 'gray.500');
 
+  useEffect(() => {
+    if (publicKey) {
+      // Using null to indicate uninitialized state
+      getUserDiscordId(publicKey).then(res => {
+        console.log('res', res);
+        setDiscordUserIdState(res || ''); // Set to empty string if no ID is found
+      });
+    }
+  }, [publicKey, setOpenedModalCoinMint]);
   const handleRemoveFromWatchList = async (
     coin: Coin,
     passedPublicKey: PublicKey,
@@ -186,10 +208,7 @@ const WatchListTable = () => {
                   w={{ base: '24', md: '52' }}
                 >
                   {coinState && (
-                    <PriceDisplay
-                      price={currentCoinState(coin)?.priceData?.price}
-                      decimals={currentCoinState(coin)?.statsData[5]?.decimals}
-                    />
+                    <PriceDisplay price={currentCoinState(coin)?.priceData} />
                   )}
                 </Td>
                 <Td>
@@ -232,6 +251,17 @@ const WatchListTable = () => {
                                 variant={'outline'}
                                 size={'sm'}
                                 onClick={() => {
+                                  if (!publicKey) {
+                                    toast({
+                                      title: 'No wallet connected',
+                                      description:
+                                        'Please connect your wallet to create an alert',
+                                      status: 'error',
+                                      duration: 5000,
+                                      isClosable: true,
+                                    });
+                                    return;
+                                  }
                                   setOpenedModalCoinMint(coin.mint);
                                 }}
                                 _hover={{
@@ -248,6 +278,8 @@ const WatchListTable = () => {
                                 onClose={() => setOpenedModalCoinMint(null)}
                                 onOpen={() => setOpenedModalCoinMint(coin.mint)}
                                 coin={coin}
+                                discordUserIdState={discordUserIdState}
+                                setDiscordUserIdState={setDiscordUserIdState}
                               />
                             )}
                           </>

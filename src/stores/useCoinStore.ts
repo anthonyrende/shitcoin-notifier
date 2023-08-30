@@ -6,6 +6,7 @@ import { extractMetadata } from '@/utils/metaDataHelper';
 
 import _ from 'lodash';
 import { createStoreWithSelectors } from './createStoreWithSelectors';
+import { fetchCoinPrice } from '@/utils/fetchCoinPrice';
 
 // Define the interface of the Cart state
 interface State {
@@ -49,8 +50,21 @@ const useCoinStoreBase = create(
           console.log('This coin is either blocked or already added.');
           return;
         }
-        const updatedCoins = [...coins, newCoin].filter(coin => coin.mint);
-        set({ coins: updatedCoins });
+        fetchCoinPrice(newCoin.mint).then(priceData => {
+          if (
+            (priceData !== undefined || priceData !== '$undefined') &&
+            priceData > 0
+          ) {
+            console.log(
+              'Price data found for',
+              newCoin.mint,
+              priceData === undefined,
+              priceData === '$undefined',
+            );
+            const updatedCoins = [...coins, newCoin].filter(coin => coin.mint);
+            set({ coins: updatedCoins });
+          }
+        });
       },
       addToWatchList: (newCoin: Coin) => {
         const watchList = get().watchList;

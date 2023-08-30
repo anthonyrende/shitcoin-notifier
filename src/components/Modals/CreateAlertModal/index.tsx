@@ -31,7 +31,6 @@ import { FiDelete } from 'react-icons/fi';
 import { useConditionStore } from '@/stores/useConditionStore';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { PublicKey } from '@solana/web3.js';
-import { fetchCoinPrice } from '@/utils/fetchCoinPrice';
 import useFetchCoinPrice from '@/hooks/useFetchCoinPrice';
 import { useCoinStore } from '@/stores/useCoinStore';
 import { formatPrice } from '@/utils/formatPrice';
@@ -224,7 +223,7 @@ export default function CreateAlertModal({
     };
 
     try {
-      const response = await fetch('/api/alerts', {
+      const response = await fetch('/api/priceAlerts/createOrUpdateAlert', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

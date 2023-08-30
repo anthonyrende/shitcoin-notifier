@@ -6,7 +6,7 @@ export default async function handler(
   res: NextApiResponse,
 ) {
   const { mint, conditions, publicKeyString: publicKey, price } = req.body;
-
+  console.log('req.body', req);
   // Find the user_id using the public_key
   const { data: user, error: userError } = await supabase
     .from('users')

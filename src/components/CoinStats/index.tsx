@@ -183,6 +183,7 @@ export default function CoinStats() {
   const { coinPrices, loading, error } = useFetchCoinPrice({
     coins: coinState,
   });
+  console.log('error: ', error);
 
   console.log('coinsPriceeeeeeee: ', coinPrices, coinState);
   // console.log('coinState', coinState);
@@ -240,58 +241,60 @@ export default function CoinStats() {
         coinState &&
         coinState?.map((coin, index) => {
           return (
-            <SimpleGrid
-              columns={{ base: 1, md: 4 }}
-              spacing={{ base: 5, lg: 4 }}
-              key={`${coin.mint}_${index}`}
-              // onClick={() => {
-              //   router.push(`/coin/${coin.mint}`);
-              // }}
-            >
-              <StatsCard
-                title={'Name'}
-                stat={coin?.metaData?.name}
-                icon={<Img src={coin?.metaData?.image} boxSize={'3em'} />}
-              />
-              <StatsCard
-                title={'Current Price'}
-                stat={<PriceDisplay price={coin?.priceData} />}
-                icon={<FiServer size={'3em'} />}
-              />
-              <StatsCard
-                title={'30 Min Price Change'}
-                stat={
-                  tokenStats[index] && tokenStats[index][5]
-                    ? formatAsPercentage(tokenStats[index][5]?.priceChange)
-                    : 'N/A'
-                }
-                // icon={<BsPerson size={'3em'} />}
-              />
-
-              <Button
-                onClick={() => {
-                  if (!publicKey) {
-                    toast({
-                      title: 'No wallet connected',
-                      description:
-                        'Please connect your wallet to add this coin to your watchlist',
-                      status: 'error',
-                      duration: 5000,
-                      isClosable: true,
-                    });
-                  } else {
-                    handleAddToWatchList(coin, publicKey);
-                  }
-                }}
-                colorScheme="purple"
-                mb={{ base: 7, md: 0 }}
-                w="200px"
-                justifySelf={'center'}
-                alignSelf={'center'}
+            coin.priceData && (
+              <SimpleGrid
+                columns={{ base: 1, md: 4 }}
+                spacing={{ base: 5, lg: 4 }}
+                key={`${coin.mint}_${index}`}
+                // onClick={() => {
+                //   router.push(`/coin/${coin.mint}`);
+                // }}
               >
-                Add to Watchlist
-              </Button>
-            </SimpleGrid>
+                <StatsCard
+                  title={'Name'}
+                  stat={coin?.metaData?.name}
+                  icon={<Img src={coin?.metaData?.image} boxSize={'3em'} />}
+                />
+                <StatsCard
+                  title={'Current Price'}
+                  stat={<PriceDisplay price={coin?.priceData} />}
+                  icon={<FiServer size={'3em'} />}
+                />
+                <StatsCard
+                  title={'30 Min Price Change'}
+                  stat={
+                    tokenStats[index] && tokenStats[index][5]
+                      ? formatAsPercentage(tokenStats[index][5]?.priceChange)
+                      : 'N/A'
+                  }
+                  // icon={<BsPerson size={'3em'} />}
+                />
+
+                <Button
+                  onClick={() => {
+                    if (!publicKey) {
+                      toast({
+                        title: 'No wallet connected',
+                        description:
+                          'Please connect your wallet to add this coin to your watchlist',
+                        status: 'error',
+                        duration: 5000,
+                        isClosable: true,
+                      });
+                    } else {
+                      handleAddToWatchList(coin, publicKey);
+                    }
+                  }}
+                  colorScheme="purple"
+                  mb={{ base: 7, md: 0 }}
+                  w="200px"
+                  justifySelf={'center'}
+                  alignSelf={'center'}
+                >
+                  Add to Watchlist
+                </Button>
+              </SimpleGrid>
+            )
           );
         })}
     </Box>

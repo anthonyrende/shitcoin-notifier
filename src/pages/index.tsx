@@ -102,7 +102,7 @@ const Home = () => {
             bg: 'blackAlpha.800',
             transform: 'scale(0.95)',
           }}
-          _hover={{ bg: 'blackAlpha.600' }}
+          _hover={{ bg: 'blackAlpha.500', transform: 'scale(1.05)' }}
           bg="blackAlpha.700"
           color="white"
           mt={4}

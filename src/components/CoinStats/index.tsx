@@ -19,7 +19,13 @@ import {
   useToast,
 } from '@chakra-ui/react';
 import { ReactNode } from 'react';
-import { BsPerson } from 'react-icons/bs';
+import {
+  BsArrowDown,
+  BsArrowUp,
+  BsCollection,
+  BsCurrencyDollar,
+  BsPerson,
+} from 'react-icons/bs';
 import { FiServer } from 'react-icons/fi';
 import { GoLocation } from 'react-icons/go';
 
@@ -82,6 +88,8 @@ function StatsCard(props: StatsCardProps) {
 export default function CoinStats() {
   const router = useRouter();
   const { publicKey, disconnect, disconnecting } = useWallet();
+
+  const [watchListLoading, setWatchListLoading] = useState(false);
   const [tokenStats, setTokenStats] = useState<any[]>([]);
   const [coinState, setCoinState] = useState<Coin[]>([]);
 
@@ -193,7 +201,7 @@ export default function CoinStats() {
     passedPublicKey: PublicKey,
   ) => {
     const publicKeyString = passedPublicKey.toBase58();
-
+    setWatchListLoading(true);
     try {
       const response = await fetch('/api/watchlist', {
         method: 'POST',
@@ -207,6 +215,14 @@ export default function CoinStats() {
         const data = await response.json();
         console.log('Coin added to watchlist:', data);
         addToWatchList(coin);
+        setWatchListLoading(false);
+        toast({
+          title: 'Coin added to watchlist',
+          description: `${coin?.metaData?.name} has been added to your watchlist`,
+          status: 'success',
+          duration: 5000,
+          isClosable: true,
+        });
       } else {
         const { error } = await response.json();
         console.error('Failed to add coin to watchlist:', error);
@@ -217,6 +233,7 @@ export default function CoinStats() {
           duration: 5000,
           isClosable: true,
         });
+        setWatchListLoading(false);
       }
     } catch (err) {
       console.error('Error while calling the API:', err);
@@ -258,19 +275,33 @@ export default function CoinStats() {
                 <StatsCard
                   title={'Current Price'}
                   stat={<PriceDisplay price={coin?.priceData} />}
-                  icon={<FiServer size={'3em'} />}
+                  icon={<BsCurrencyDollar size={'2.5em'} />}
                 />
                 <StatsCard
-                  title={'30 Min Price Change'}
+                  title={'1H Price Change'}
                   stat={
                     tokenStats[index] && tokenStats[index][5]
                       ? formatAsPercentage(tokenStats[index][5]?.priceChange)
                       : 'N/A'
                   }
-                  // icon={<BsPerson size={'3em'} />}
+                  icon={
+                    tokenStats[index] &&
+                    tokenStats[index][5].priceChange
+                      .toString()
+                      .includes('-') ? (
+                      <BsArrowDown size={'3em'} color={'red'} />
+                    ) : (
+                      <BsArrowUp size={'3em'} color={'green'} />
+                    )
+                  }
                 />
 
                 <Button
+                  isLoading={watchListLoading}
+                  // _loading={{
+                  //   bg: 'blackAlpha.800',
+                  //   transform: 'scale(0.95)',
+                  // }}
                   onClick={() => {
                     if (!publicKey) {
                       toast({

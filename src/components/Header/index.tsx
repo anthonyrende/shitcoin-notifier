@@ -55,7 +55,7 @@ export const Header: FC = () => {
       const message = new SigninMessage({
         domain: typeof window !== undefined ? window.location.host : '',
         publicKey: publicKey?.toBase58(),
-        statement: `Sign this message to sign in to the app.`,
+        statement: `Sign to prove that you own this wallet`,
         nonce: csrf,
       });
 

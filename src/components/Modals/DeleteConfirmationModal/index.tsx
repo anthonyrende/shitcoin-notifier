@@ -40,7 +40,7 @@ const DeleteConfirmationModal = ({
 }: DeleteConfirmationModalProps) => {
   const toast = useToast();
   const { publicKey } = useWallet();
-
+  const [loading, setLoading] = useState(false);
   const { removeFromWatchList } = useCoinStore(['removeFromWatchList']);
 
   const handleRemoveFromWatchList = async (
@@ -48,6 +48,7 @@ const DeleteConfirmationModal = ({
     passedPublicKey: PublicKey,
   ) => {
     const publicKeyString = passedPublicKey.toBase58();
+    setLoading(true);
     try {
       const response = await fetch('/api/watchlist', {
         method: 'DELETE',
@@ -67,10 +68,12 @@ const DeleteConfirmationModal = ({
           duration: 5000,
           isClosable: true,
         });
+        setLoading(false);
         return;
       } else {
         const { error } = await response.json();
         console.error('Failed to remove coin from watchlist:', error);
+        setLoading(false);
       }
     } catch (err) {
       console.error('Error while calling the API:', err);
@@ -101,48 +104,50 @@ const DeleteConfirmationModal = ({
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
-            Are you sure you want to remove this from your watchlist?
+            <Text fontSize="md">
+              Are you sure you want to remove {coin?.metaData?.name} from your
+              watchlist? This will reset your price alert
+            </Text>
           </ModalBody>
-          <Divider />
+
           <ModalFooter>
-            <VStack
+            <HStack
               spacing={4}
-              // justifyContent={'center'}
-              // alignContent={'center'}
-              // alignItems={'center'}
-              justifyItems={'space-around'}
+              justifyContent={'center'}
+              alignContent={'center'}
+              alignItems={'center'}
+              justifyItems={'space-between'}
               w="full"
             >
-              <Flex flexDirection={'column'} w="50%"></Flex>
-              <Flex>
-                <>
-                  <Button
-                    variant={'solid'}
-                    bgGradient={[
-                      'linear(to-tr, teal.300, yellow.400)',
-                      'linear(to-t, blue.200, teal.500)',
-                      'linear(to-b, orange.100, purple.300)',
-                    ]}
-                    alignSelf={'center'}
-                    justifyContent={'center'}
-                    justifySelf={'center'}
-                    onClick={() => {
-                      if (!publicKey) {
-                        alert('Please connect your wallet');
-                      }
-
+              <>
+                <Button
+                  variant={'solid'}
+                  bgGradient={[
+                    'linear(to-tr, teal.300, yellow.400)',
+                    'linear(to-t, blue.200, teal.500)',
+                    'linear(to-b, orange.100, purple.300)',
+                  ]}
+                  alignSelf={'center'}
+                  justifyContent={'center'}
+                  justifySelf={'center'}
+                  loadingText="Removing"
+                  isLoading={loading}
+                  onClick={() => {
+                    if (!publicKey) {
+                      alert('Please connect your wallet');
+                    } else {
                       handleRemoveFromWatchList(coin, publicKey);
-                    }}
-                  >
-                    Remove
-                  </Button>
-                </>
-
-                <Button colorScheme="purple" mr={3} onClick={onClose}>
-                  Close
+                    }
+                  }}
+                >
+                  Remove
                 </Button>
-              </Flex>
-            </VStack>
+              </>
+
+              <Button colorScheme="purple" mr={3} onClick={onClose}>
+                Close
+              </Button>
+            </HStack>
           </ModalFooter>
         </ModalContent>
       </Modal>

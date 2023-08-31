@@ -180,6 +180,8 @@ type CreateAlertModalProps = {
   coin: Coin;
   discordUserIdState: string | null;
   setDiscordUserIdState: (discordUserId: string) => void;
+  loading: boolean;
+  setLoading: (loading: boolean) => void;
 };
 
 export default function CreateAlertModal({
@@ -188,9 +190,10 @@ export default function CreateAlertModal({
   coin,
   discordUserIdState,
   setDiscordUserIdState,
+  loading,
+  setLoading,
 }: CreateAlertModalProps) {
   const [inputDiscordId, setInputDiscordId] = useState('');
-  const [discordInputLoading, setDiscordInputLoading] = useState(false);
   const { conditions } = useConditionStore(['conditions']);
   const { coins } = useCoinStore(['coins']);
   const [conditionsState, setConditionsState] = useState(conditions);
@@ -252,7 +255,7 @@ export default function CreateAlertModal({
   };
 
   const handleAddButtonClick = async () => {
-    setDiscordInputLoading(true);
+    setLoading(true);
     if (!publicKey) {
       return;
     }
@@ -260,7 +263,7 @@ export default function CreateAlertModal({
       const success = await setUserDiscordId(publicKey, inputDiscordId);
       if (success) {
         setDiscordUserIdState(inputDiscordId); // Update the global state only here
-        setDiscordInputLoading(false);
+        setLoading(false);
         toast({
           title: 'Discord ID set',
           description: 'We’ve set your Discord ID to ' + inputDiscordId,
@@ -271,7 +274,7 @@ export default function CreateAlertModal({
       }
     } catch (error) {
       console.error('Error setting Discord ID:', error);
-      setDiscordInputLoading(false);
+      setLoading(false);
     }
   };
 
@@ -366,7 +369,7 @@ export default function CreateAlertModal({
                     handleAddButtonClick();
                   }}
                   loadingText="Adding"
-                  isLoading={discordInputLoading}
+                  isLoading={loading}
                   _loading={{
                     bgGradient: [
                       'linear(to-tr, teal.300, yellow.400)',

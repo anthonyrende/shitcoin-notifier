@@ -26,7 +26,7 @@ import {
 // import { Box } from "framer-motion"
 import Link from 'next/link';
 import { use, useCallback, useEffect, useMemo, useState } from 'react';
-import { BsPencil, BsPencilSquare } from 'react-icons/bs';
+import { BsDiscord, BsPencil, BsPencilSquare } from 'react-icons/bs';
 import { FiAlertCircle, FiDelete } from 'react-icons/fi';
 import CreateAlertModal from '../Modals/CreateAlertModal';
 import { PriceDisplay } from '../PriceDisplay';
@@ -104,6 +104,18 @@ const WatchListTable = () => {
     setCoinState(coins);
   }, [coins]);
 
+  const {
+    isOpen: isCreateAlertOpen,
+    onOpen: onCreateAlertOpen,
+    onClose: onCreateAlertClose,
+  } = useDisclosure();
+
+  const {
+    isOpen: isDeleteConfirmationOpen,
+    onOpen: onDeleteConfirmationOpen,
+    onClose: onDeleteConfirmationClose,
+  } = useDisclosure();
+
   useEffect(() => {
     if (publicKey && watchListCoins) {
       watchListCoins.forEach(async coin => {
@@ -119,19 +131,7 @@ const WatchListTable = () => {
         }
       });
     }
-  }, [publicKey, watchListCoins, setLoading]);
-
-  const {
-    isOpen: isCreateAlertOpen,
-    onOpen: onCreateAlertOpen,
-    onClose: onCreateAlertClose,
-  } = useDisclosure();
-
-  const {
-    isOpen: isDeleteConfirmationOpen,
-    onOpen: onDeleteConfirmationOpen,
-    onClose: onDeleteConfirmationClose,
-  } = useDisclosure();
+  }, [publicKey, watchListCoins, isCreateAlertOpen]);
 
   const currentCoinState = useCallback(
     (coin: Coin) => {
@@ -151,12 +151,12 @@ const WatchListTable = () => {
     if (publicKey) {
       // Using null to indicate uninitialized state
       getUserDiscordId(publicKey).then(res => {
-        console.log('res', res);
         setDiscordUserIdState(res || ''); // Set to empty string if no ID is found
       });
     }
-  }, [publicKey, setOpenedModalCoinMint]);
+  }, [publicKey, isCreateAlertOpen]);
 
+  console.log('isDeleteConfirmationOpen', isDeleteConfirmationOpen);
   return (
     <Stack w="full" bg="purple.800" rounded={'lg'}>
       <TableContainer
@@ -236,108 +236,149 @@ const WatchListTable = () => {
                 </Td>
                 <Td>
                   <Flex justifyContent={'flex-end'} align={'center'}>
-                    <ButtonGroup gap="2">
-                      <Flex
-                        alignItems="center"
-                        gap="1"
-                        justifyContent={'center'}
-                        align={'center'}
-                        margin={'auto'}
-                      >
-                        {isWatching[coin.mint] ? (
-                          <>
-                            <FiAlertCircle size={20} />
-                            <Text
-                              fontSize="sm"
-                              // color={'brand.500'}
-                              // bg={'gradient.orange'}
-                              //   style={{
-                              //     WebkitBackgroundClip: 'text',
-                              //     WebkitTextFillColor: 'transparent',
-                              //   }}
-                              color={'white'}
-                            >
-                              Price Alert Is Set
-                            </Text>
-                          </>
-                        ) : (
-                          <>
-                            <Tooltip
-                              label="Create new alert"
-                              hasArrow
-                              arrowSize={10}
-                              placement="top"
-                              rounded={'md'}
-                            >
-                              <Button
-                                variant={'outline'}
-                                size={'sm'}
-                                onClick={() => {
-                                  if (!publicKey) {
-                                    toast({
-                                      title: 'No wallet connected',
-                                      description:
-                                        'Please connect your wallet to create an alert',
-                                      status: 'error',
-                                      duration: 5000,
-                                      isClosable: true,
-                                    });
-                                    return;
-                                  }
-                                  setOpenedModalCoinMint(coin.mint);
-                                  onCreateAlertOpen();
-                                }}
-                                _hover={{
-                                  color: 'purple.400',
-                                }}
-                                color="white"
-                              >
-                                Create Price Alert
-                              </Button>
-                            </Tooltip>
-                            {coin.mint === openedModalCoinMint && (
-                              <CreateAlertModal
-                                isOpen={isCreateAlertOpen}
-                                onClose={() => onCreateAlertClose()}
-                                onOpen={() => onCreateAlertOpen()}
-                                coin={currentCoinState(coin)}
-                                discordUserIdState={discordUserIdState}
-                                setDiscordUserIdState={setDiscordUserIdState}
-                              />
-                            )}
-                          </>
-                        )}
-                      </Flex>
-                      {/* TODO: Add watching state */}
-                      {coin?.watching && (
-                        <Tooltip
-                          label="test"
-                          hasArrow
-                          arrowSize={10}
-                          placement="top"
-                          rounded={'md'}
+                    {publicKey && (
+                      <ButtonGroup gap="2">
+                        <Flex
+                          alignItems="center"
+                          gap="1"
+                          justifyContent={'center'}
+                          align={'center'}
+                          margin={'auto'}
                         >
-                          <Link href={coin?.watching}>
-                            <a target="_blank">
-                              <Button
-                                bg={gray200}
-                                borderRadius={'md'}
-                                p="1"
-                                color={gray800}
-                                _hover={{
-                                  bg: 'gray.300',
-                                  color: 'orange.400',
-                                }}
+                          {isWatching[coin.mint] ? (
+                            <>
+                              <FiAlertCircle size={20} />
+                              <Text
+                                fontSize="sm"
+                                // color={'brand.500'}
+                                // bg={'gradient.orange'}
+                                //   style={{
+                                //     WebkitBackgroundClip: 'text',
+                                //     WebkitTextFillColor: 'transparent',
+                                //   }}
+                                color={'white'}
                               >
-                                {/* Wacthing Icon here */}
-                              </Button>
-                            </a>
-                          </Link>
-                        </Tooltip>
-                      )}
-                      {isWatching[coin.mint] && (
+                                Price Alert Is Set
+                              </Text>
+                            </>
+                          ) : (
+                            <>
+                              <Tooltip
+                                label="Create new alert"
+                                hasArrow
+                                arrowSize={10}
+                                placement="top"
+                                rounded={'md'}
+                              >
+                                <Button
+                                  variant={'outline'}
+                                  size={'sm'}
+                                  onClick={() => {
+                                    if (!publicKey) {
+                                      toast({
+                                        title: 'No wallet connected',
+                                        description:
+                                          'Please connect your wallet to create an alert',
+                                        status: 'error',
+                                        duration: 5000,
+                                        isClosable: true,
+                                      });
+                                      return;
+                                    }
+                                    setOpenedModalCoinMint(coin.mint);
+                                    onCreateAlertOpen();
+                                  }}
+                                  _hover={{
+                                    color: 'purple.400',
+                                  }}
+                                  color="white"
+                                >
+                                  Create Price Alert
+                                </Button>
+                              </Tooltip>
+                              {coin.mint === openedModalCoinMint && (
+                                <CreateAlertModal
+                                  isOpen={isCreateAlertOpen}
+                                  onClose={() => onCreateAlertClose()}
+                                  onOpen={() => onCreateAlertOpen()}
+                                  coin={currentCoinState(coin)}
+                                  discordUserIdState={discordUserIdState}
+                                  setDiscordUserIdState={setDiscordUserIdState}
+                                  loading={loading}
+                                  setLoading={setLoading}
+                                />
+                              )}
+                            </>
+                          )}
+                        </Flex>
+                        {/* TODO: Add watching state */}
+                        {coin?.watching && (
+                          <Tooltip
+                            label="test"
+                            hasArrow
+                            arrowSize={10}
+                            placement="top"
+                            rounded={'md'}
+                          >
+                            <Link href={coin?.watching}>
+                              <a target="_blank">
+                                <Button
+                                  bg={gray200}
+                                  borderRadius={'md'}
+                                  p="1"
+                                  color={gray800}
+                                  _hover={{
+                                    bg: 'gray.300',
+                                    color: 'orange.400',
+                                  }}
+                                >
+                                  {/* Wacthing Icon here */}
+                                </Button>
+                              </a>
+                            </Link>
+                          </Tooltip>
+                        )}
+                        {isWatching[coin.mint] && (
+                          <Tooltip
+                            label="Edit Coin Notification"
+                            hasArrow
+                            arrowSize={10}
+                            placement="top"
+                            rounded={'md'}
+                          >
+                            <Button
+                              bg={gray200}
+                              borderRadius={'md'}
+                              p="1"
+                              _hover={{
+                                bg: 'gray.300',
+                                color: 'orange.400',
+                              }}
+                              onClick={() => {
+                                setOpenedModalCoinMint(coin.mint);
+                                onCreateAlertOpen();
+                              }}
+                            >
+                              <BsPencilSquare size={20} />
+
+                              {coin.mint === openedModalCoinMint && (
+                                <CreateAlertModal
+                                  isOpen={isCreateAlertOpen}
+                                  onClose={() => onCreateAlertClose()}
+                                  onOpen={() => onCreateAlertOpen()}
+                                  coin={coin}
+                                  discordUserIdState={discordUserIdState}
+                                  setDiscordUserIdState={setDiscordUserIdState}
+                                  loading={loading}
+                                  setLoading={setLoading}
+                                />
+                              )}
+                            </Button>
+                          </Tooltip>
+                        )}
+                        {/* TODO Add Discord Edit button */}
                         <Tooltip
-                          label="Edit Coin Notification"
+                          label="Remove Coin from Watchlist"
                           hasArrow
                           arrowSize={10}
                           placement="top"
@@ -353,56 +394,29 @@ const WatchListTable = () => {
                             }}
                             onClick={() => {
                               setOpenedModalCoinMint(coin.mint);
-                              onCreateAlertOpen();
+                              setDeleteModal(true);
                             }}
                           >
-                            <BsPencilSquare size={20} />
-
-                            {coin.mint === openedModalCoinMint && (
-                              <CreateAlertModal
-                                isOpen={isCreateAlertOpen}
-                                onClose={() => onCreateAlertClose()}
-                                onOpen={() => onCreateAlertOpen()}
-                                coin={coin}
-                                discordUserIdState={discordUserIdState}
-                                setDiscordUserIdState={setDiscordUserIdState}
-                              />
-                            )}
+                            <FiDelete size={20} />
                           </Button>
                         </Tooltip>
-                      )}
-                      <Tooltip
-                        label="Remove Coin from Watchlist"
-                        hasArrow
-                        arrowSize={10}
-                        placement="top"
-                        rounded={'md'}
-                      >
-                        <Button
-                          bg={gray200}
-                          borderRadius={'md'}
-                          p="1"
-                          _hover={{
-                            bg: 'gray.300',
-                            color: 'orange.400',
-                          }}
-                          onClick={() => {
-                            setOpenedModalCoinMint(coin.mint);
-                            onDeleteConfirmationOpen();
-                          }}
-                        >
-                          <FiDelete size={20} />
-                        </Button>
-                      </Tooltip>
-                      {coin.mint === openedModalCoinMint && (
-                        <DeleteConfirmationModal
-                          isOpen={isDeleteConfirmationOpen}
-                          onClose={() => onDeleteConfirmationClose()}
-                          onOpen={() => onDeleteConfirmationOpen()}
-                          coin={coin}
-                        />
-                      )}
-                    </ButtonGroup>
+                        {coin.mint === openedModalCoinMint && (
+                          <DeleteConfirmationModal
+                            isOpen={!!deleteModal}
+                            onClose={() => setDeleteModal(false)}
+                            onOpen={() => onDeleteConfirmationOpen()}
+                            setDeleteModal={setDeleteModal}
+                            coin={coin}
+                          />
+                        )}
+                      </ButtonGroup>
+                    )}
+                    {!publicKey && (
+                      <Text fontSize={'sm'}>
+                        {' '}
+                        Connect your wallet to create an alert
+                      </Text>
+                    )}
                   </Flex>
                 </Td>
               </Tr>

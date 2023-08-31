@@ -28,6 +28,7 @@ type DeleteConfirmationModalProps = {
   onOpen: () => void;
   onClose: () => void;
   coin: Coin;
+  setDeleteModal(arg0: boolean): void;
 };
 
 const DeleteConfirmationModal = ({
@@ -35,6 +36,7 @@ const DeleteConfirmationModal = ({
   onOpen,
   onClose,
   coin,
+  setDeleteModal,
 }: DeleteConfirmationModalProps) => {
   const toast = useToast();
   const { publicKey } = useWallet();
@@ -79,7 +81,9 @@ const DeleteConfirmationModal = ({
     <>
       <Modal
         isCentered
-        onClose={onClose}
+        onClose={() => {
+          setDeleteModal(false);
+        }}
         isOpen={isOpen}
         motionPreset="slideInBottom"
         size="xl"

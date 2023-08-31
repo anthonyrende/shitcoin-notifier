@@ -26,6 +26,7 @@ import coinDummyData from '../../coinDummyData.json';
 import AddYourCoin from '@/components/Modals/AddYourCoin';
 import { useCoinStore } from '@/stores/useCoinStore';
 import WatchListTable from '@/components/WatchlistTable';
+import { BsCoin } from 'react-icons/bs';
 
 type Token = {
   tokenAccount: string;
@@ -85,12 +86,15 @@ const Home = () => {
         you degenerate
       </Heading>
       <Text fontSize="lg" maxW="2xl" mt={4}>
-        If a coin in your wallet is listed on BirdEye, you can create a
+        If a coin in your wallet is listed on Raydium, you can create a
         notification for it. You will be notified when the price of the coin
-        changes by more than 5% in the last 24 hours.
+        changes by the conditions you set.
         <br />
         <br />
-        {/* <b>Disclaimer:</b> This is a work in progress. Use at your own risk. */}
+      </Text>
+      <Text fontSize="xs" maxW="2xl" mt={1}>
+        <b>Disclaimer:</b> This is <strong>alpha version</strong>, expect bugs
+        and unexpected behavior :)
       </Text>
       <Link _hover={{ textDecor: 'none' }}>
         <Button
@@ -107,7 +111,7 @@ const Home = () => {
           size="lg"
           onClick={onOpen}
         >
-          <Icon as={FiGithub} mr={2} />
+          <Icon as={BsCoin} mr={2} />
           Add your own coin
         </Button>
         <AddYourCoin isOpen={isOpen} onOpen={onOpen} onClose={onClose} />

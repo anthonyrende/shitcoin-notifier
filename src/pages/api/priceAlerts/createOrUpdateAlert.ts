@@ -5,7 +5,13 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse,
 ) {
-  const { mint, conditions, publicKeyString: publicKey, price } = req.body;
+  const {
+    mint,
+    conditions,
+    publicKeyString: publicKey,
+    price,
+    coinName,
+  } = req.body;
   console.log('req.body', req);
   // Find the user_id using the public_key
   const { data: user, error: userError } = await supabase
@@ -39,6 +45,7 @@ export default async function handler(
           conditions: conditions,
           set_coin_price: price,
           price_hit: true,
+          coin_name: coinName,
         })
         .eq('id', user.id)
         .eq('mint', mint);
@@ -58,6 +65,7 @@ export default async function handler(
           conditions: conditions,
           set_coin_price: price,
           price_hit: true,
+          coin_name: coinName,
         });
 
       if (insertError) {

@@ -18,6 +18,7 @@ import {
   useToast,
   Divider,
   VStack,
+  Tooltip,
 } from '@chakra-ui/react';
 
 const {
@@ -205,7 +206,7 @@ export default function CreateAlertModal({
   const alertConditions = conditionsState.find(
     condition => condition.mint === coin.mint,
   );
-  console.log('coin.metaData.name', coin.metaData.name);
+
   const handleCreatePriceAlert = async (
     mint: string,
     conditions: any,
@@ -292,7 +293,7 @@ export default function CreateAlertModal({
           ]}
         >
           <ModalHeader color={'gray.700'} fontSize="xl" fontWeight="bold">
-            Create a new alert for your shitcoin
+            Create a new alert for your shitcoin {coin?.metaData?.name}
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
@@ -315,46 +316,16 @@ export default function CreateAlertModal({
           </ModalBody>
           <Divider />
           <ModalFooter>
-            <VStack
-              spacing={4}
-              // justifyContent={'center'}
-              // alignContent={'center'}
-              // alignItems={'center'}
-              justifyItems={'space-around'}
+            <HStack
+              spacing={5}
+              justifyContent={'center'}
+              alignContent={'center'}
+              alignItems={'center'}
+              justifyItems={'space-between'}
               w="full"
             >
-              <Flex flexDirection={'column'} w="50%"></Flex>
-              <Flex>
-                {discordUserIdState && discordUserIdState.length > 0 ? (
-                  <>
-                    <Button
-                      variant={'solid'}
-                      bgGradient={[
-                        'linear(to-tr, teal.300, yellow.400)',
-                        'linear(to-t, blue.200, teal.500)',
-                        'linear(to-b, orange.100, purple.300)',
-                      ]}
-                      alignSelf={'center'}
-                      justifyContent={'center'}
-                      justifySelf={'center'}
-                      onClick={() => {
-                        if (!publicKey) {
-                          alert('Please connect your wallet');
-                        }
-                        alertConditions &&
-                          publicKey &&
-                          handleCreatePriceAlert(
-                            alertConditions.mint,
-                            alertConditions.conditions,
-                            publicKey,
-                            coin.priceData,
-                          );
-                      }}
-                    >
-                      Create
-                    </Button>
-                  </>
-                ) : (
+              {discordUserIdState && discordUserIdState.length > 0 ? (
+                <>
                   <Button
                     variant={'solid'}
                     bgGradient={[
@@ -363,27 +334,81 @@ export default function CreateAlertModal({
                       'linear(to-b, orange.100, purple.300)',
                     ]}
                     alignSelf={'center'}
+                    justifyContent={'center'}
+                    justifySelf={'center'}
                     onClick={() => {
-                      handleAddButtonClick();
-                    }}
-                    loadingText="Adding"
-                    isLoading={discordInputLoading}
-                    _loading={{
-                      bgGradient: [
-                        'linear(to-tr, teal.300, yellow.400)',
-                        'linear(to-t, blue.200, teal.500)',
-                        'linear(to-b, orange.100, purple.300)',
-                      ],
+                      if (!publicKey) {
+                        alert('Please connect your wallet');
+                      }
+                      alertConditions &&
+                        publicKey &&
+                        handleCreatePriceAlert(
+                          alertConditions.mint,
+                          alertConditions.conditions,
+                          publicKey,
+                          coin.priceData,
+                        );
                     }}
                   >
-                    Add
+                    Create
                   </Button>
-                )}
-                <Button colorScheme="purple" mr={3} onClick={onClose}>
-                  Close
+                </>
+              ) : (
+                <Button
+                  variant={'solid'}
+                  bgGradient={[
+                    'linear(to-tr, teal.300, yellow.400)',
+                    'linear(to-t, blue.200, teal.500)',
+                    'linear(to-b, orange.100, purple.300)',
+                  ]}
+                  alignSelf={'center'}
+                  onClick={() => {
+                    handleAddButtonClick();
+                  }}
+                  loadingText="Adding"
+                  isLoading={discordInputLoading}
+                  _loading={{
+                    bgGradient: [
+                      'linear(to-tr, teal.300, yellow.400)',
+                      'linear(to-t, blue.200, teal.500)',
+                      'linear(to-b, orange.100, purple.300)',
+                    ],
+                  }}
+                >
+                  Add
                 </Button>
-              </Flex>
-            </VStack>
+              )}
+              <Button colorScheme="purple" mr={3} onClick={onClose}>
+                Close
+              </Button>
+            </HStack>
+            {discordUserIdState && (
+              <Button
+                colorScheme="purple"
+                size={'sm'}
+                px="5"
+                onClick={() => {
+                  setDiscordUserIdState('');
+                }}
+              >
+                <Tooltip
+                  label="This will reset your discord id and you will have to add it again"
+                  aria-label="A tooltip"
+                  rounded={'md'}
+                  // add to top
+                  placement={'top'}
+                >
+                  <Text
+                    fontSize={'sm'}
+                    textDecoration={'underline'}
+                    textDecorationStyle={'dotted'}
+                    textUnderlineOffset={'3px'}
+                  >
+                    Reset Discord Id
+                  </Text>
+                </Tooltip>
+              </Button>
+            )}
           </ModalFooter>
         </ModalContent>
       </Modal>

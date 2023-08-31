@@ -183,7 +183,6 @@ type CreateAlertModalProps = {
 
 export default function CreateAlertModal({
   isOpen,
-  onOpen,
   onClose,
   coin,
   discordUserIdState,
@@ -206,7 +205,7 @@ export default function CreateAlertModal({
   const alertConditions = conditionsState.find(
     condition => condition.mint === coin.mint,
   );
-
+  console.log('coin.metaData.name', coin.metaData.name);
   const handleCreatePriceAlert = async (
     mint: string,
     conditions: any,
@@ -220,6 +219,7 @@ export default function CreateAlertModal({
       conditions: conditions,
       publicKeyString,
       price: coinPrice,
+      coinName: coin.metaData.name,
     };
 
     try {

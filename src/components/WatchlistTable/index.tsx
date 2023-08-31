@@ -25,7 +25,7 @@ import {
 } from '@chakra-ui/react';
 // import { Box } from "framer-motion"
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useEffect, useMemo, useState } from 'react';
 import { BsPencil, BsPencilSquare } from 'react-icons/bs';
 import { FiAlertCircle, FiDelete } from 'react-icons/fi';
 import CreateAlertModal from '../Modals/CreateAlertModal';
@@ -33,6 +33,9 @@ import { PriceDisplay } from '../PriceDisplay';
 import { PublicKey } from '@solana/web3.js';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useConditionStore } from '@/stores/useConditionStore';
+import { publicKey } from '@raydium-io/raydium-sdk';
+import DeleteConfirmationModal from '../Modals/DeleteConfirmationModal';
+import { on } from 'events';
 
 const getUserDiscordId = async (publicKey: PublicKey) => {
   const publicKeyString = publicKey?.toBase58();
@@ -48,6 +51,28 @@ const getUserDiscordId = async (publicKey: PublicKey) => {
   return data.user.discord_user_id;
 };
 
+const checkIfPriceAlertExists = async (
+  pubkey: PublicKey,
+  mint: string,
+  setLoading: (arg0: boolean) => void,
+) => {
+  setLoading(true);
+  const publicKeyString = pubkey?.toBase58();
+  const options = {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  };
+  const response = await fetch(
+    `/api/priceAlerts/getAlert?publicKey=${publicKeyString}&mint=${mint}`,
+    options,
+  );
+  const data = await response.json();
+  setLoading(false);
+  return data;
+};
+
 const WatchListTable = () => {
   const [discordUserIdState, setDiscordUserIdState] = useState<string | null>(
     '',
@@ -57,7 +82,8 @@ const WatchListTable = () => {
   const [conditionsState, setConditionsState] = useState<[]>([]);
   const { publicKey } = useWallet();
   const { conditions } = useConditionStore(['conditions']);
-
+  const [isWatching, setIsWatching] = useState<{ [key: string]: boolean }>({});
+  const [loading, setLoading] = useState(false);
   const toast = useToast();
   useEffect(() => {
     setConditionsState(conditions);
@@ -78,21 +104,43 @@ const WatchListTable = () => {
     setCoinState(coins);
   }, [coins]);
 
+  useEffect(() => {
+    if (publicKey && watchListCoins) {
+      watchListCoins.forEach(async coin => {
+        const data = await checkIfPriceAlertExists(
+          publicKey,
+          coin.mint,
+          setLoading,
+        );
+        if (data.alert.set_coin_price !== null) {
+          setIsWatching(prevState => ({ ...prevState, [coin.mint]: true }));
+        } else {
+          setIsWatching(prevState => ({ ...prevState, [coin.mint]: false }));
+        }
+      });
+    }
+  }, [publicKey, watchListCoins, setLoading]);
+
   const {
     isOpen: isCreateAlertOpen,
     onOpen: onCreateAlertOpen,
     onClose: onCreateAlertClose,
   } = useDisclosure();
 
-  console.log('conditionsState', conditionsState);
+  const {
+    isOpen: isDeleteConfirmationOpen,
+    onOpen: onDeleteConfirmationOpen,
+    onClose: onDeleteConfirmationClose,
+  } = useDisclosure();
 
   const currentCoinState = useCallback(
-    coin => {
+    (coin: Coin) => {
       return coinState?.find(c => c.mint === coin?.mint);
     },
     [coinState],
   );
   const [openedModalCoinMint, setOpenedModalCoinMint] = useState(null);
+  const [deleteModal, setDeleteModal] = useState(false);
   const gray50 = useColorModeValue('gray.50', 'gray.700');
   const bg = useColorModeValue('purple.700', 'gray.800');
   const gray180 = useColorModeValue('gray.180', 'gray.700');
@@ -108,32 +156,7 @@ const WatchListTable = () => {
       });
     }
   }, [publicKey, setOpenedModalCoinMint]);
-  const handleRemoveFromWatchList = async (
-    coin: Coin,
-    passedPublicKey: PublicKey,
-  ) => {
-    const publicKeyString = passedPublicKey.toBase58();
-    try {
-      const response = await fetch('/api/watchlist', {
-        method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ coin, publicKeyString }),
-      });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Coin removed from watchlist:', data);
-        removeFromWatchList(coin);
-      } else {
-        const { error } = await response.json();
-        console.error('Failed to remove coin from watchlist:', error);
-      }
-    } catch (err) {
-      console.error('Error while calling the API:', err);
-    }
-  };
   return (
     <Stack w="full" bg="purple.800" rounded={'lg'}>
       <TableContainer
@@ -221,8 +244,7 @@ const WatchListTable = () => {
                         align={'center'}
                         margin={'auto'}
                       >
-                        {/* TODO: Change this to currentConditionState(coin)?.conditions?.length > 0  */}
-                        {coin?.watching ? (
+                        {isWatching[coin.mint] ? (
                           <>
                             <FiAlertCircle size={20} />
                             <Text
@@ -235,7 +257,7 @@ const WatchListTable = () => {
                               //   }}
                               color={'white'}
                             >
-                              Watching
+                              Price Alert Is Set
                             </Text>
                           </>
                         ) : (
@@ -263,6 +285,7 @@ const WatchListTable = () => {
                                     return;
                                   }
                                   setOpenedModalCoinMint(coin.mint);
+                                  onCreateAlertOpen();
                                 }}
                                 _hover={{
                                   color: 'purple.400',
@@ -274,10 +297,10 @@ const WatchListTable = () => {
                             </Tooltip>
                             {coin.mint === openedModalCoinMint && (
                               <CreateAlertModal
-                                isOpen={!!openedModalCoinMint}
-                                onClose={() => setOpenedModalCoinMint(null)}
-                                onOpen={() => setOpenedModalCoinMint(coin.mint)}
-                                coin={coin}
+                                isOpen={isCreateAlertOpen}
+                                onClose={() => onCreateAlertClose()}
+                                onOpen={() => onCreateAlertOpen()}
+                                coin={currentCoinState(coin)}
                                 discordUserIdState={discordUserIdState}
                                 setDiscordUserIdState={setDiscordUserIdState}
                               />
@@ -312,31 +335,42 @@ const WatchListTable = () => {
                           </Link>
                         </Tooltip>
                       )}
-                      <Tooltip
-                        label="Edit Coin Notification"
-                        hasArrow
-                        arrowSize={10}
-                        placement="top"
-                        rounded={'md'}
-                      >
-                        <Button
-                          bg={gray200}
-                          borderRadius={'md'}
-                          p="1"
-                          _hover={{
-                            bg: 'gray.300',
-                            color: 'orange.400',
-                          }}
-                          onClick={() => {
-                            // TODO: Edit coin modal here
-                          }}
+                      {isWatching[coin.mint] && (
+                        <Tooltip
+                          label="Edit Coin Notification"
+                          hasArrow
+                          arrowSize={10}
+                          placement="top"
+                          rounded={'md'}
                         >
-                          <BsPencilSquare size={20} />
+                          <Button
+                            bg={gray200}
+                            borderRadius={'md'}
+                            p="1"
+                            _hover={{
+                              bg: 'gray.300',
+                              color: 'orange.400',
+                            }}
+                            onClick={() => {
+                              setOpenedModalCoinMint(coin.mint);
+                              onCreateAlertOpen();
+                            }}
+                          >
+                            <BsPencilSquare size={20} />
 
-                          {/* TODO: Edit coin modal here */}
-                        </Button>
-                      </Tooltip>
-
+                            {coin.mint === openedModalCoinMint && (
+                              <CreateAlertModal
+                                isOpen={isCreateAlertOpen}
+                                onClose={() => onCreateAlertClose()}
+                                onOpen={() => onCreateAlertOpen()}
+                                coin={coin}
+                                discordUserIdState={discordUserIdState}
+                                setDiscordUserIdState={setDiscordUserIdState}
+                              />
+                            )}
+                          </Button>
+                        </Tooltip>
+                      )}
                       <Tooltip
                         label="Remove Coin from Watchlist"
                         hasArrow
@@ -353,14 +387,21 @@ const WatchListTable = () => {
                             color: 'orange.400',
                           }}
                           onClick={() => {
-                            //TODO: Modal to confirm deletion
-                            handleRemoveFromWatchList(coin, publicKey);
+                            setOpenedModalCoinMint(coin.mint);
+                            onDeleteConfirmationOpen();
                           }}
                         >
                           <FiDelete size={20} />
                         </Button>
                       </Tooltip>
-                      {/* TODO: Confirmation of deletion modal */}
+                      {coin.mint === openedModalCoinMint && (
+                        <DeleteConfirmationModal
+                          isOpen={isDeleteConfirmationOpen}
+                          onClose={() => onDeleteConfirmationClose()}
+                          onOpen={() => onDeleteConfirmationOpen()}
+                          coin={coin}
+                        />
+                      )}
                     </ButtonGroup>
                   </Flex>
                 </Td>

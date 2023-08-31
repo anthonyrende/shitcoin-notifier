@@ -63,6 +63,7 @@ export default async function handler(
 
   if (req.method === 'DELETE') {
     // If coin is not in watchlist, just return
+    console.log('existingWatchlist', existingWatchlist);
     if (
       !existingWatchlist ||
       !existingWatchlist.coins.find(coin => coin.mint === req.body.coin.mint)
@@ -84,7 +85,23 @@ export default async function handler(
       .eq('user_id', user.id);
 
     if (updateError) {
+      console.log('Error updating watchlist:', updateError);
       return res.status(400).json({ error: 'Error updating watchlist.' });
+    }
+
+    const { error: deleteError } = await supabase
+      .from('price_alert')
+      .update({
+        send_notification: false,
+        price_hit: false,
+        set_coin_price: null,
+      })
+      .eq('id', user.id)
+      .eq('mint', coin.mint);
+
+    if (deleteError) {
+      console.log('Error deleting price alert:', deleteError);
+      return res.status(400).json({ error: 'Error deleting price alert.' });
     }
 
     return res.status(200).json({ message: 'Coin removed from watchlist.' });

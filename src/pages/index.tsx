@@ -26,7 +26,8 @@ import coinDummyData from '../../coinDummyData.json';
 import AddYourCoin from '@/components/Modals/AddYourCoin';
 import { useCoinStore } from '@/stores/useCoinStore';
 import WatchListTable from '@/components/WatchlistTable';
-import { BsCoin } from 'react-icons/bs';
+import { BsCoin, BsDiscord } from 'react-icons/bs';
+import DiscordModal from '@/components/Modals/DiscordModal';
 
 type Token = {
   tokenAccount: string;
@@ -79,6 +80,12 @@ const Home = () => {
     }
   }, [disconnect, clearState, disconnecting]);
 
+  const {
+    isOpen: isDiscordModalOpen,
+    onOpen: onDiscordModalOpen,
+    onClose: onDiscordModalClose,
+  } = useDisclosure();
+
   return (
     <MainLayout>
       <Heading size="4xl">
@@ -96,30 +103,39 @@ const Home = () => {
         <b>Disclaimer:</b> This is <strong>alpha version</strong>, expect bugs
         and unexpected behavior :)
       </Text>
-      <Link _hover={{ textDecor: 'none' }}>
-        <Button
-          _active={{
-            bg: 'blackAlpha.800',
-            transform: 'scale(0.95)',
-          }}
-          _hover={{ bg: 'blackAlpha.500', transform: 'scale(1.05)' }}
-          bg="blackAlpha.700"
-          color="white"
-          mt={4}
-          rounded="full"
-          shadow="lg"
-          size="lg"
-          onClick={onOpen}
-        >
-          <Icon as={BsCoin} mr={2} />
-          Add your own coin
-        </Button>
-        <AddYourCoin isOpen={isOpen} onOpen={onOpen} onClose={onClose} />
-      </Link>
+
+      <Button
+        _active={{
+          bg: 'blackAlpha.800',
+          transform: 'scale(0.95)',
+        }}
+        _hover={{ bg: 'blackAlpha.500', transform: 'scale(1.05)' }}
+        bg="blackAlpha.700"
+        color="white"
+        mt={4}
+        rounded="full"
+        shadow="lg"
+        size="lg"
+        onClick={onOpen}
+      >
+        <Icon as={BsCoin} mr={2} />
+        Add your own coin
+      </Button>
+      <AddYourCoin isOpen={isOpen} onOpen={onOpen} onClose={onClose} />
+
       <>
         <Stack direction="row" spacing={4} mt={8} w="90%">
           <WatchListTable />
         </Stack>
+        {publicKey && (
+          <>
+            <DiscordModal
+              isOpen={isDiscordModalOpen}
+              onClose={onDiscordModalClose}
+              onOpen={onDiscordModalOpen}
+            />
+          </>
+        )}
         <CoinStats />
       </>
     </MainLayout>

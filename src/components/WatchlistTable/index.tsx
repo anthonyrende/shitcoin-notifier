@@ -156,7 +156,6 @@ const WatchListTable = () => {
     }
   }, [publicKey, isCreateAlertOpen]);
 
-  console.log('isDeleteConfirmationOpen', isDeleteConfirmationOpen);
   return (
     <Stack w="full" bg="purple.800" rounded={'lg'}>
       <TableContainer
@@ -174,7 +173,7 @@ const WatchListTable = () => {
             borderCollapse: 'collapse',
           }}
         >
-          <Thead bg="purple.400">
+          <Thead bg="purple.400" w="full">
             <Tr>
               <Th fontSize={'sm'} textTransform={'capitalize'} fontWeight={600}>
                 Coin
@@ -376,7 +375,6 @@ const WatchListTable = () => {
                             </Button>
                           </Tooltip>
                         )}
-                        {/* TODO Add Discord Edit button */}
                         <Tooltip
                           label="Remove Coin from Watchlist"
                           hasArrow

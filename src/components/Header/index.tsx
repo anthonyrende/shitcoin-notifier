@@ -22,7 +22,7 @@ import { useWalletModal } from '@solana/wallet-adapter-react-ui';
 import { useWallet } from '@solana/wallet-adapter-react';
 import { SigninMessage } from '@/utils/signInMessage';
 import bs58 from 'bs58';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { getCsrfToken, signIn, signOut, useSession } from 'next-auth/react';
 import { Router, useRouter } from 'next/router';
 
@@ -42,6 +42,7 @@ export const Header: FC = () => {
   const walletModal = useWalletModal();
   const { data: session, status } = useSession();
   const loading = status === 'loading';
+  const [localWalletState, setLocalWalletState] = useState<string | null>(null);
 
   const handleSignIn = async () => {
     try {
@@ -72,11 +73,23 @@ export const Header: FC = () => {
       console.error(error);
     }
   };
+  // checkUserInDatabase();
   useEffect(() => {
-    if (connected && status === 'unauthenticated') {
-      handleSignIn();
+    // Get the last used publicKey from local storage
+    const lastPublicKey = localStorage.getItem('lastPublicKey');
+
+    if (publicKey) {
+      const currentPublicKey = publicKey?.toBase58();
+
+      // Check if the user is unauthenticated or has changed their wallet
+      if (status === 'unauthenticated' || lastPublicKey !== currentPublicKey) {
+        handleSignIn();
+
+        // Update the last used publicKey in local storage
+        localStorage.setItem('lastPublicKey', currentPublicKey);
+      }
     }
-  }, [connected]);
+  }, [connected, status, session, wallet, publicKey?.toBase58()]);
 
   return (
     <Flex

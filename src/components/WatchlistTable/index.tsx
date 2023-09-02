@@ -48,7 +48,7 @@ const getUserDiscordId = async (publicKey: PublicKey) => {
   };
   const response = await fetch(`/api/discord/getDiscordId`, options);
   const data = await response.json();
-  return data.user.discord_user_id;
+  return data?.user?.discord_user_id;
 };
 
 const checkIfPriceAlertExists = async (
@@ -85,6 +85,7 @@ const WatchListTable = () => {
   const [isWatching, setIsWatching] = useState<{ [key: string]: boolean }>({});
   const [loading, setLoading] = useState(false);
   const toast = useToast();
+
   useEffect(() => {
     setConditionsState(conditions);
   }, [conditions]);
@@ -124,7 +125,7 @@ const WatchListTable = () => {
           coin.mint,
           setLoading,
         );
-        if (data.alert.set_coin_price !== null) {
+        if (data?.alert?.set_coin_price !== null && data?.alert !== null) {
           setIsWatching(prevState => ({ ...prevState, [coin.mint]: true }));
         } else {
           setIsWatching(prevState => ({ ...prevState, [coin.mint]: false }));

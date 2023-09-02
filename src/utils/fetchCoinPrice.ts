@@ -19,7 +19,7 @@ export async function fetchCoinPrice(tokenMint: string) {
 
     if (!tokenInfo) {
       console.log(`Token with mint ${tokenMint} not found.`);
-      return;
+      return { err: `Token with mint ${tokenMint} not found.` };
     }
 
     const tokenPrice = tokenPrices[tokenMint];

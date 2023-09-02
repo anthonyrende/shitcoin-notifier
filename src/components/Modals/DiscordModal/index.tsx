@@ -59,7 +59,7 @@ const getUserDiscordId = async (publicKey: PublicKey) => {
   };
   const response = await fetch(`/api/discord/getDiscordId`, options);
   const data = await response.json();
-  return data.user.discord_user_id;
+  return data?.user?.discord_user_id;
 };
 export default function DiscordModal({ isOpen, onOpen, onClose }) {
   const [inputDiscordId, setInputDiscordId] = useState('');

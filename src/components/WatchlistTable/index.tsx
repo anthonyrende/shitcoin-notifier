@@ -36,6 +36,8 @@ import { useConditionStore } from '@/stores/useConditionStore';
 import { publicKey } from '@raydium-io/raydium-sdk';
 import DeleteConfirmationModal from '../Modals/DeleteConfirmationModal';
 import { on } from 'events';
+import { formatPrice } from '@/utils/formatPrice';
+import { formatConiditionPrice } from '@/utils/formatConditionPrice';
 
 const getUserDiscordId = async (publicKey: PublicKey) => {
   const publicKeyString = publicKey?.toBase58();
@@ -79,6 +81,8 @@ const WatchListTable = () => {
   );
   const [watchListCoins, setWatchListCoins] = useState<Coin[]>();
   const [coinState, setCoinState] = useState<Coin[]>([]);
+  const [setCoinPrice, setSetCoinPrice] = useState<Record<string, any>>({});
+
   const [conditionsState, setConditionsState] = useState<[]>([]);
   const { publicKey } = useWallet();
   const { conditions } = useConditionStore(['conditions']);
@@ -118,20 +122,32 @@ const WatchListTable = () => {
   } = useDisclosure();
 
   useEffect(() => {
-    if (publicKey && watchListCoins) {
-      watchListCoins.forEach(async coin => {
-        const data = await checkIfPriceAlertExists(
-          publicKey,
-          coin.mint,
-          setLoading,
+    const fetchAlerts = async () => {
+      if (publicKey && watchListCoins) {
+        const fetchPromises = watchListCoins.map(coin =>
+          checkIfPriceAlertExists(publicKey, coin.mint, setLoading),
         );
-        if (data?.alert?.set_coin_price !== null && data?.alert !== null) {
-          setIsWatching(prevState => ({ ...prevState, [coin.mint]: true }));
-        } else {
-          setIsWatching(prevState => ({ ...prevState, [coin.mint]: false }));
-        }
-      });
-    }
+
+        const results = await Promise.all(fetchPromises);
+
+        const newIsWatching = {};
+        const newSetCoinPrice = {};
+
+        results.forEach((data, index) => {
+          // console.log('data: ', data);
+          const mint = watchListCoins[index].mint;
+          newIsWatching[mint] =
+            data?.alert?.set_coin_price !== null && data?.alert !== null;
+          newSetCoinPrice[mint] = data?.alert?.set_coin_price;
+        });
+
+        // Update both state variables
+        setIsWatching(newIsWatching);
+        setSetCoinPrice(newSetCoinPrice);
+      }
+    };
+
+    fetchAlerts();
   }, [publicKey, watchListCoins, isCreateAlertOpen]);
 
   const currentCoinState = useCallback(
@@ -185,6 +201,9 @@ const WatchListTable = () => {
               <Th fontSize={'sm'} textTransform={'capitalize'} fontWeight={600}>
                 Current Price
               </Th>
+              <Th fontSize={'sm'} textTransform={'capitalize'} fontWeight={600}>
+                Target Price
+              </Th>
             </Tr>
           </Thead>
 
@@ -219,8 +238,7 @@ const WatchListTable = () => {
                   whiteSpace={'nowrap'}
                   w={{ base: '24', md: '52' }}
                 >
-                  {coinState &&
-                    currentCoinState(coin)?.statsData[0]?.priceChange}
+                  Not set
                 </Td>
                 <Td
                   fontSize={'sm'}
@@ -232,6 +250,26 @@ const WatchListTable = () => {
                 >
                   {coinState && (
                     <PriceDisplay price={currentCoinState(coin)?.priceData} />
+                  )}
+                </Td>
+                <Td
+                  fontSize={'sm'}
+                  pb={2}
+                  textOverflow={'ellipsis'}
+                  overflow={'hidden'}
+                  whiteSpace={'nowrap'}
+                  w={{ base: '24', md: '52' }}
+                >
+                  {setCoinPrice[coin.mint] ? (
+                    <PriceDisplay
+                      price={formatConiditionPrice(
+                        setCoinPrice[coin.mint],
+                        conditionsState.find((c: any) => c.mint === coin.mint)
+                          ?.conditions,
+                      )}
+                    />
+                  ) : (
+                    'Not set'
                   )}
                 </Td>
                 <Td>

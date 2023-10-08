@@ -21,6 +21,8 @@ Shitcoin Notifier is a Next.js application designed to keep track of cryptocurre
 - TypeScript
 - Supabase
 - Discord API
+- @solana/web3.js
+- NextAuth
 
 ## Quick Start
 

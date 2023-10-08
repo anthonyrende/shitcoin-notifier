@@ -1,5 +1,5 @@
+![image](https://github.com/anthonyrende/shitcoin-notifier/assets/20310701/7a1d6ac8-a84a-46c1-b4ba-a49bed0817b4)
 
-   ![image](https://github.com/anthonyrende/shitcoin-notifier/assets/20310701/244c08cc-02a6-42f8-82a1-0a7ae11bf393)
 
 
 # Shitcoin Notifier
@@ -28,30 +28,37 @@ Shitcoin Notifier is a Next.js application designed to keep track of cryptocurre
    ```bash
    git clone https://github.com/anthonyrende/shitcoin-notifier.git
 
-Install dependencies
+2. Install dependencies
 ```bash
 npm install
 ```
-2. Set up your .env file with your Supabase and Discord credentials.
+3. Set up your .env file with your Supabase and Discord credentials.
 
-3. Run the development server
+4. Run the development server
 ```bash
 npm run dev
 ```
+-------
 
 ### Custom Hooks
-- useFetchCoinDetails
-- useFetchCoinFromWallet
-- useFetchCoinInfo
-- useFetchCoinPrice
+
+| Hook                    | Description                                                                 |
+|-------------------------|-----------------------------------------------------------------------------|
+| **useFetchCoinDetails** | Fetches detailed information about a specific coin, including metadata and historical data. |
+| **useFetchCoinFromWallet** | Retrieves coin data related to the user's Solana wallet.                   |
+| **useFetchCoinInfo**    | Fetches general information about a specific coin, such as name and symbol.  |
+| **useFetchCoinPrice**   | Fetches the current price of a specific coin in real-time.                   |
 
 ### API Endpoints
-- /api/auth/[...nextAuth]
-- /api/discord/getDiscordId
-- /api/discord/setDiscordId
-- /api/priceAlerts/createOrUpdateAlert
-- /api/priceAlerts/getAlert
-- /api/watchlist
+
+| Endpoint                        | Description                                                                 |
+|---------------------------------|-----------------------------------------------------------------------------|
+| **/api/auth/[...nextAuth]**     | Handles authentication via NextAuth.                                         |
+| **/api/discord/getDiscordId**   | Retrieves the Discord ID associated with the authenticated user from Supabase.|
+| **/api/discord/setDiscordId**   | Sets the Discord ID for the authenticated user from Supabase.                |
+| **/api/priceAlerts/createOrUpdateAlert** | Creates or updates a price alert for a specific coin.                    |
+| **/api/priceAlerts/getAlert**   | Fetches the existing price alert settings for a specific coin.               |
+| **/api/watchlist**              | Manages the user's watchlist of coins, supporting CRUD operations.          |
 
 ### Contributing
 Feel free to open issues and pull requests!

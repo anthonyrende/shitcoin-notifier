@@ -1,24 +1,60 @@
-<a href="https://next-solana-starter.vercel.app">
-  <img alt="Next Solana Starter" src="https://user-images.githubusercontent.com/76690419/215271811-8f916458-5a14-4a89-883a-64080e890c2d.svg">
-</a>
 
-   
-# Next Solana Starter
-
-An opinionated Next.js template for building Solana applications pre configured with Chakra UI, Next.js, Solana wallet adapter, ESlint, Prettier, and more.
+   ![image](https://github.com/anthonyrende/shitcoin-notifier/assets/20310701/244c08cc-02a6-42f8-82a1-0a7ae11bf393)
 
 
-# One-click Deploy
+# Shitcoin Notifier
 
-You can deploy this template to Vercel with the button below:
+## Overview
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Favneesh0612%2Fnext-solana-starter)
+Shitcoin Notifier is a Next.js application designed to keep track of cryptocurrency prices and send alerts via Discord. The app integrates with Supabase for backend services and uses various custom hooks for data fetching.
 
-You can also clone & create this repo locally with the following command:
+## Features
 
+- Real-time coin price tracking
+- Discord notifications
+- Supabase integration for backend services
+- Custom hooks for data fetching
+
+## Tech Stack
+
+- Next.js
+- TypeScript
+- Supabase
+- Discord API
+
+## Quick Start
+
+1. Clone the repo
+   ```bash
+   git clone https://github.com/anthonyrende/shitcoin-notifier.git
+
+Install dependencies
 ```bash
-npx create-next-app next-solana-starter --example "https://github.com/avneesh0612/next-solana-starter"
+npm install
 ```
+2. Set up your .env file with your Supabase and Discord credentials.
+
+3. Run the development server
+```bash
+npm run dev
+```
+
+### Custom Hooks
+- useFetchCoinDetails
+- useFetchCoinFromWallet
+- useFetchCoinInfo
+- useFetchCoinPrice
+
+### API Endpoints
+- /api/auth/[...nextAuth]
+- /api/discord/getDiscordId
+- /api/discord/setDiscordId
+- /api/priceAlerts/createOrUpdateAlert
+- /api/priceAlerts/getAlert
+- /api/watchlist
+
+### Contributing
+Feel free to open issues and pull requests!
 
 ### Tools
 
